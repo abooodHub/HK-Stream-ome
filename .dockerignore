@@ -1,0 +1,23 @@
+# لا يلزم بناء حاوية الـ tracker سوى tracker/ + requirements.txt
+.git
+.github
+.claude
+.revert_new
+web
+img
+config
+deploy
+docs
+*.zip
+*.bak
+*.bak[0-9]
+**/__pycache__
+**/*.pyc
+**/*.pyo
+data
+.env.example
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+.gitignore

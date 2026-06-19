@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#07070f"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <title>H&amp;K — حلّ مشاكل البث</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/common.css?v=1">
+  <style>
+    body{min-height:100vh}
+
+    /* ── Header ── */
+    .hp-header{
+      display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:50;
+      padding:14px clamp(14px,3vw,26px);
+      background:rgba(10,10,18,.9);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);
+    }
+    .hp-back{
+      position:absolute;right:clamp(14px,3vw,26px);top:50%;transform:translateY(-50%);
+      display:flex;align-items:center;gap:6px;color:var(--text2);text-decoration:none;font-size:.82rem;
+      padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.04);
+      transition:background .2s,color .2s;
+    }
+    .hp-back:hover{background:rgba(255,255,255,.08);color:var(--text)}
+    .hp-title{display:flex;align-items:center;gap:9px;font-size:.98rem;font-weight:700;color:var(--text)}
+    .hp-title svg{fill:var(--gold)}
+
+    /* ── Layout ── */
+    .hp-wrap{max-width:1080px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(14px,3vw,26px) 60px}
+
+    /* ── Hero ── */
+    .hp-hero{
+      text-align:center;margin-bottom:36px;
+      background:linear-gradient(180deg,var(--gold-bg),transparent);
+      border:1px solid var(--border);border-radius:var(--radius-lg);
+      padding:clamp(28px,5vw,46px) clamp(20px,4vw,40px);position:relative;overflow:hidden;
+    }
+    .hp-hero::before{
+      content:'';position:absolute;inset:-40% 30% auto;height:60%;
+      background:radial-gradient(closest-side,var(--gold-glow),transparent);pointer-events:none;
+    }
+    .hp-hero-icon{
+      width:62px;height:62px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+      background:var(--gold-bg-h);border:1px solid var(--border-h);border-radius:50%;
+      box-shadow:0 0 30px -6px var(--gold-glow);position:relative;
+    }
+    .hp-hero-icon svg{fill:var(--gold-l);width:30px;height:30px}
+    .hp-hero h1{font-size:clamp(1.3rem,3.4vw,1.9rem);font-weight:800;color:var(--text);margin-bottom:10px}
+    .hp-hero p{color:var(--text2);font-size:clamp(.9rem,2.2vw,1.02rem);max-width:560px;margin:0 auto;line-height:1.9}
+    .hp-hero .hl{color:var(--gold-l);font-weight:700}
+
+    /* ── Browser grid ── */
+    .hp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+
+    .bcard{
+      background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      padding:22px;position:relative;overflow:hidden;
+      transition:border-color .25s,transform .2s var(--ease),box-shadow .25s;
+    }
+    .bcard:hover{border-color:var(--border-h);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+    .bcard::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:var(--accent,var(--gold))}
+
+    .bcard-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .bcard-logo{
+      width:42px;height:42px;border-radius:12px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,.05);border:1px solid var(--line);
+    }
+    .bcard-logo img{width:24px;height:24px}
+    .bcard-name{font-family:var(--font-en);font-size:1.12rem;font-weight:700;color:var(--text)}
+    .bcard-sub{font-size:.74rem;color:var(--text3);margin-top:1px}
+
+    /* ── Steps ── */
+    .steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:11px}
+    .steps li{position:relative;padding-right:34px;counter-increment:s;color:var(--text2);font-size:.9rem;line-height:1.7}
+    .steps li::before{
+      content:counter(s);position:absolute;right:0;top:1px;
+      width:23px;height:23px;border-radius:50%;
+      background:var(--accent,var(--gold));color:#0a0a12;
+      font-family:var(--font-en);font-size:.74rem;font-weight:800;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .steps li b{color:var(--text);font-weight:700}
+
+    /* ── Code chip ── */
+    code,.codeflow{
+      font-family:var(--font-en);font-size:.82rem;direction:ltr;display:inline-block;
+      background:#05050b;border:1px solid var(--line);border-radius:7px;
+      padding:3px 9px;color:var(--gold-l);letter-spacing:.2px;white-space:nowrap;
+    }
+    .codeflow{margin-top:5px;color:var(--text);unicode-bidi:plaintext}
+    .codeflow .arrow{color:var(--gold);margin:0 4px}
+
+    /* ── Verify success ── */
+    .verify{
+      margin-top:16px;padding:12px 14px;border-radius:var(--radius-sm);
+      background:rgba(62,207,130,.07);border:1px solid rgba(62,207,130,.22);
+    }
+    .verify-top{display:flex;align-items:center;gap:7px;font-size:.78rem;color:var(--text2);margin-bottom:7px}
+    .verify-top svg{fill:var(--green);width:15px;height:15px;flex-shrink:0}
+    .verify-row{display:flex;align-items:center;gap:8px;font-family:var(--font-en);font-size:.8rem;direction:ltr}
+    .verify-row .ok{color:var(--green);font-weight:700}
+
+    /* ── Shields warning ── */
+    .shield-note{
+      margin-top:16px;padding:13px 15px;border-radius:var(--radius-sm);
+      background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.22);
+    }
+    .shield-note .sh-h{display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:700;color:var(--amber);margin-bottom:8px}
+    .shield-note ol{list-style:none;counter-reset:sh;display:flex;flex-direction:column;gap:7px}
+    .shield-note li{position:relative;padding-right:24px;counter-increment:sh;color:var(--text2);font-size:.86rem;line-height:1.6}
+    .shield-note li::before{
+      content:counter(sh);position:absolute;right:0;top:1px;width:18px;height:18px;border-radius:50%;
+      background:rgba(245,158,11,.20);color:var(--amber);font-family:var(--font-en);font-size:.68rem;font-weight:800;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* ── Important note ── */
+    .hp-note{
+      margin-top:30px;background:var(--card2);border:1px solid var(--border);
+      border-radius:var(--radius);padding:24px clamp(20px,3vw,28px);position:relative;
+    }
+    .hp-note-h{display:flex;align-items:center;gap:9px;font-size:1.02rem;font-weight:800;color:var(--gold-l);margin-bottom:12px}
+    .hp-note-h svg{fill:var(--gold-l);width:20px;height:20px}
+    .hp-note p{color:var(--text2);font-size:.92rem;line-height:1.95}
+    .hp-note .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .hp-note .badges span{
+      display:inline-flex;align-items:center;gap:6px;font-family:var(--font-en);font-size:.8rem;font-weight:600;
+      background:var(--gold-bg);border:1px solid var(--border);border-radius:20px;padding:5px 12px;color:var(--text);
+    }
+    .hp-note .badges img{width:15px;height:15px}
+
+    @media(max-width:480px){
+      .bcard{padding:18px}
+      .hp-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<header class="hp-header">
+  <a href="/" class="hp-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    العودة للبث
+  </a>
+  <div class="hp-title">
+    <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+    حلّ مشاكل البث
+  </div>
+</header>
+
+<div class="hp-wrap">
+
+  <!-- Hero -->
+  <section class="hp-hero">
+    <div class="hp-hero-icon">
+      <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+    </div>
+    <h1>تواجه تقطيعًا أو بطئًا؟</h1>
+    <p>غالبًا يكون السبب <span class="hl">تعطّل التسريع الرسومي</span> في المتصفّح. اتبع خطوات متصفّحك التالية لتفعيله — وستلاحظ تحسّنًا فوريًا في سلاسة البث المباشر.</p>
+  </section>
+
+  <!-- Browser cards -->
+  <div class="hp-grid">
+
+    <!-- Chrome -->
+    <div class="bcard" style="--accent:#4285F4">
+      <div class="bcard-head">
+        <div class="bcard-logo"><img src="/icons/browsers/chrome.svg" alt="Chrome"></div>
+        <div>
+          <div class="bcard-name">Google Chrome</div>
+          <div class="bcard-sub">تفعيل التسريع الرسومي</div>
+        </div>
+      </div>
+      <ol class="steps">
+        <li>افتح <b>الإعدادات</b> (Settings).</li>
+        <li>انتقل إلى:<div class="codeflow">System <span class="arrow">→</span> Use graphics acceleration when available</div></li>
+        <li><b>فعّل</b> الخيار.</li>
+        <li><b>أعد تشغيل</b> المتصفّح.</li>
+      </ol>
+      <div class="verify">
+        <div class="verify-top">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          للتحقّق افتح <code>chrome://gpu</code> ويجب أن يظهر:
+        </div>
+        <div class="verify-row">Video Decode: <span class="ok">Hardware accelerated</span></div>
+      </div>
+    </div>
+
+    <!-- Brave -->
+    <div class="bcard" style="--accent:#FB542B">
+      <div class="bcard-head">
+        <div class="bcard-logo"><img src="/icons/browsers/opera.svg" onerror="this.src='/icons/browsers/chrome.svg'" alt="Brave" style="display:none"><span style="font-size:22px">🦁</span></div>
+        <div>
+          <div class="bcard-name">Brave</div>
+          <div class="bcard-sub">تسريع + إيقاف الدرع</div>
+        </div>
+      </div>
+      <ol class="steps">
+        <li>افتح:<div class="codeflow">brave://settings/system</div></li>
+        <li><b>فعّل</b> Use graphics acceleration when available.</li>
+        <li><b>أعد تشغيل</b> المتصفّح.</li>
+      </ol>
+      <div class="shield-note">
+        <div class="sh-h">🦁 إذا استمرّت المشكلة (مهم لـ Brave):</div>
+        <ol>
+          <li>اضغط أيقونة <b>🦁 Brave Shield</b> بجانب شريط العنوان.</li>
+          <li><b>أوقف Shields</b> لهذه الصفحة.</li>
+          <li><b>حدّث</b> الصفحة.</li>
+        </ol>
+      </div>
+      <div class="verify">
+        <div class="verify-top">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          للتحقّق افتح <code>brave://gpu</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edge -->
+    <div class="bcard" style="--accent:#0078D7">
+      <div class="bcard-head">
+        <div class="bcard-logo"><img src="/icons/browsers/edge.svg" alt="Edge"></div>
+        <div>
+          <div class="bcard-name">Microsoft Edge</div>
+          <div class="bcard-sub">تفعيل التسريع الرسومي</div>
+        </div>
+      </div>
+      <ol class="steps">
+        <li>افتح:<div class="codeflow">edge://settings/system</div></li>
+        <li><b>فعّل</b> Use hardware acceleration when available.</li>
+        <li><b>أعد تشغيل</b> المتصفّح.</li>
+      </ol>
+    </div>
+
+    <!-- Firefox -->
+    <div class="bcard" style="--accent:#FF7139">
+      <div class="bcard-head">
+        <div class="bcard-logo"><img src="/icons/browsers/firefox.svg" alt="Firefox"></div>
+        <div>
+          <div class="bcard-name">Mozilla Firefox</div>
+          <div class="bcard-sub">تفعيل التسريع الرسومي</div>
+        </div>
+      </div>
+      <ol class="steps">
+        <li>افتح:<div class="codeflow">about:preferences</div></li>
+        <li>ابحث عن قسم <b>Performance</b>.</li>
+        <li><b>أزل</b> علامة Use recommended performance settings.</li>
+        <li><b>فعّل</b> Use hardware acceleration when available.</li>
+        <li><b>أعد تشغيل</b> المتصفّح.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <!-- Important note -->
+  <section class="hp-note">
+    <div class="hp-note-h">
+      <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+      ملاحظة مهمة
+    </div>
+    <p>
+      البث يستخدم تقنية <b style="color:var(--text)">WebRTC منخفضة التأخير</b>، لذلك يُنصح باستخدام <b style="color:var(--text)">أحدث إصدار</b> من المتصفّحات التالية، مع إبقاء <b style="color:var(--text)">التسريع الرسومي</b> مفعّلًا للحصول على أفضل أداء وجودة بث.
+    </p>
+    <div class="badges">
+      <span><img src="/icons/browsers/chrome.svg" alt="">Chrome</span>
+      <span><img src="/icons/browsers/edge.svg" alt="">Edge</span>
+      <span>🦁 Brave</span>
+      <span><img src="/icons/browsers/firefox.svg" alt="">Firefox</span>
+    </div>
+  </section>
+
+  <p style="text-align:center;margin-top:34px">
+    <a href="/" class="hp-back" style="position:static;transform:none;display:inline-flex">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      الرجوع إلى البث المباشر
+    </a>
+  </p>
+
+</div>
+
+<footer class="site-footer">H&amp;K Stream &mdash; حلّ مشاكل البث</footer>
+
+</body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#07070f"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="manifest" href="/manifest.json"/>
+<title>H&amp;K Stream - لوحة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/css/common.css?v=1">
+<link rel="stylesheet" href="/css/dashboard.css?v=1">
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen">
+<div class="login-box">
+<div class="login-logo">H&amp;K Stream</div>
+<div class="login-sub">لوحة التحكم - سيرفر البث المباشر</div>
+<input class="login-field" id="login-user" placeholder="اسم المستخدم" autocomplete="username">
+<input class="login-field" id="login-pass" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+<button class="login-btn" id="login-btn" onclick="doLogin()">دخول</button>
+<div class="login-error" id="login-error"></div>
+</div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-brand-area">
+      <div class="nav-logo">H&amp;K Stream</div>
+      <div class="nav-status-badge offline" id="nav-status-badge">
+        <span class="pulse-dot"></span>
+        <span id="nav-status-text">غير متصل</span>
+      </div>
+    </div>
+    
+    <div class="nav-menu-container">
+      <ul class="nav-menu">
+        <li><button class="nav-item active" onclick="switchTab('home',this)"><span class="nav-icon">🏠</span> الرئيسية</button></li>
+        <li><button class="nav-item" onclick="switchTab('viewers',this)"><span class="nav-icon">👥</span> المشاهدون</button></li>
+        <li><button class="nav-item" onclick="switchTab('admin',this)"><span class="nav-icon">🛡️</span> الأمان</button></li>
+        <li><button class="nav-item" onclick="switchTab('settings',this)"><span class="nav-icon">⚙️</span> الإعدادات</button></li>
+      </ul>
+    </div>
+    
+    <div class="nav-meta-area">
+      <div class="nav-time" id="header-time">00:00:00</div>
+      <button class="nav-logout-btn" onclick="doLogout()">تسجيل الخروج</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="dashboard-container">
+    
+    <!-- TAB: Home (الرئيسية) -->
+    <div id="tab-home">
+
+      <!-- Hero Card -->
+      <div class="welcome-card">
+        <div class="welcome-info">
+          <h1 id="welcome-title">H&amp;K Stream</h1>
+          <p id="welcome-desc">في انتظار بدء البث...</p>
+        </div>
+        <span class="welcome-status offline" id="welcome-status-badge">
+          <span class="pulse-dot"></span>
+          <span id="welcome-status-text">غير متصل</span>
+        </span>
+      </div>
+
+      <!-- Merged Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card c-green">
+          <div class="stat-label">حالة البث</div>
+          <div class="stat-value" id="stat-status">غير متصل</div>
+          <div class="stat-sub" id="stat-status-sub">--</div>
+        </div>
+        <div class="stat-card c-green">
+          <div class="stat-label">المشاهدون الحاليون</div>
+          <div class="stat-value" id="home-viewers">0</div>
+          <div class="stat-sub" id="home-viewers-sub">أقصى مشاهدين: 0</div>
+        </div>
+        <div class="stat-card c-cyan">
+          <div class="stat-label">معدل الاستقبال</div>
+          <div class="stat-value" id="stat-bitrate-recv">0 Kbps</div>
+          <div class="stat-sub" id="stat-bitrate-send">الإرسال: 0 Kbps</div>
+        </div>
+        <div class="stat-card c-indigo">
+          <div class="stat-label">مدة البث المستمر</div>
+          <div class="stat-value" id="home-uptime">00:00:00</div>
+          <div class="stat-sub">منذ آخر بدء للاتصال</div>
+        </div>
+        <div class="stat-card c-indigo">
+          <div class="stat-label">استقرار البث</div>
+          <div class="stat-value" id="stat-stability">100%</div>
+          <div class="stat-sub" id="stat-stability-sub">أخطاء الفريز: 0</div>
+        </div>
+      </div>
+
+      <!-- hidden IDs kept for JS compatibility -->
+      <span id="stat-recv" style="display:none"></span>
+      <span id="stat-recv-sub" style="display:none"></span>
+      <span id="home-bitrate" style="display:none"></span>
+      <span id="home-bitrate-send" style="display:none"></span>
+
+      <!-- Server Health Monitor -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">🖥️ صحة الخادم (Server Health)</div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:20px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:6px;">
+                <span style="font-weight:600; color:var(--text);">المعالج (CPU)</span>
+                <span id="health-cpu-val" style="color:var(--cyan); font-weight:700;">0%</span>
+              </div>
+              <div style="height:8px; background:rgba(255,255,255,.05); border-radius:4px; overflow:hidden;">
+                <div id="health-cpu-bar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--cyan), #22d3ee); border-radius:4px; transition:width 0.5s;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:6px;">
+                <span style="font-weight:600; color:var(--text);">الذاكرة (RAM)</span>
+                <span id="health-ram-val" style="color:var(--amber); font-weight:700;">0 MB / 0 MB (0%)</span>
+              </div>
+              <div style="height:8px; background:rgba(255,255,255,.05); border-radius:4px; overflow:hidden;">
+                <div id="health-ram-bar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--amber), #fbbf24); border-radius:4px; transition:width 0.5s;"></div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:6px;">
+                <span style="font-weight:600; color:var(--text);">مساحة القرص (Disk)</span>
+                <span id="health-disk-val" style="color:var(--green); font-weight:700;">0 GB / 0 GB (0%)</span>
+              </div>
+              <div style="height:8px; background:rgba(255,255,255,.05); border-radius:4px; overflow:hidden;">
+                <div id="health-disk-bar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--green), #34d399); border-radius:4px; transition:width 0.5s;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Server Totals (cumulative since boot / lifetime) -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">📊 إجماليات الخادم</div>
+        </div>
+        <div class="card-body">
+          <div class="stats-grid" style="margin:0">
+            <div class="stat-card c-indigo">
+              <div class="stat-label">فترة تشغيل الخادم</div>
+              <div class="stat-value" id="srv-uptime">--</div>
+              <div class="stat-sub">منذ آخر إقلاع للنظام</div>
+            </div>
+            <div class="stat-card c-cyan">
+              <div class="stat-label">ساعات البث الكلية</div>
+              <div class="stat-value" id="total-stream-hours">0</div>
+              <div class="stat-sub" id="total-sessions-sub">0 جلسة بث</div>
+            </div>
+            <div class="stat-card c-green">
+              <div class="stat-label">حجم البيانات الكلي</div>
+              <div class="stat-value" id="total-data">0 B</div>
+              <div class="stat-sub" id="total-data-sub">المُرسل للمشاهدين: 0 B</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stream Details -->
+      <div class="card" id="stream-details-card" style="display:none">
+        <div class="card-head">
+          <div class="card-title">تفاصيل البث التقنية</div>
+        </div>
+        <div class="card-body">
+          <div class="stream-info-grid" id="stream-details">
+            <div class="info-item"><span class="info-key">ترميز الفيديو</span><span class="info-val" id="info-vcodec">--</span></div>
+            <div class="info-item"><span class="info-key">الدقة</span><span class="info-val" id="info-resolution">--</span></div>
+            <div class="info-item"><span class="info-key">معدل الإطارات</span><span class="info-val" id="info-vprofile">--</span></div>
+            <div class="info-item"><span class="info-key">ترميز الصوت</span><span class="info-val" id="info-acodec">--</span></div>
+            <div class="info-item"><span class="info-key">معدل العينات</span><span class="info-val" id="info-samplerate">--</span></div>
+            <div class="info-item"><span class="info-key">قنوات الصوت</span><span class="info-val" id="info-channels">--</span></div>
+            <div class="info-item"><span class="info-key">سرعة الإرسال للمشاهدين</span><span class="info-val" id="info-send-speed">0 Kbps</span></div>
+            <div class="info-item"><span class="info-key">إجمالي البيانات المُرسلة</span><span class="info-val" id="info-send-total">0 B</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bitrate Chart -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">معدل البيانات (آخر 5 دقائق)</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:.72rem;color:var(--cyan);font-weight:700">● استقبال</span>
+            <span class="badge badge-cyan" id="chart-cur-kbps">0 Kbps</span>
+            <span style="font-size:.72rem;color:var(--amber);font-weight:700">⋯ إرسال</span>
+            <span class="badge badge-amber" id="chart-cur-send-kbps">0 Kbps</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding:12px 16px">
+          <div class="chart-wrap">
+            <canvas id="bitrate-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stream archive (full history) -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">⏳ سجل أرشيف البثوث السابقة</div>
+          <button class="btn btn-danger btn-sm" onclick="deleteAllSessions()">🗑 حذف الكل</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="select-all-cb" onchange="toggleSelectAllSessions(this)" title="تحديد الكل"></th>
+                  <th>تاريخ البدء</th>
+                  <th>مدة البث</th>
+                  <th>حجم البث</th>
+                  <th>أقصى مشاهدين</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-tbody">
+                <tr><td colspan="6" class="empty-state">لا توجد جلسات مسجلة</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Viewers (المشاهدون) -->
+    <div id="tab-viewers" style="display:none">
+      <div class="stats-grid">
+        <div class="stat-card c-green">
+          <div class="stat-label">المشاهدون المتصلون حالياً</div>
+          <div class="stat-value" id="v-count">0</div>
+          <div class="stat-sub">حسب عدد عناوين IP الفريدة</div>
+        </div>
+        <div class="stat-card c-cyan">
+          <div class="stat-label">أقصى عدد مشاهدات (الذروة)</div>
+          <div class="stat-value" id="v-peak">0</div>
+          <div class="stat-sub">منذ بدء تشغيل السيرفر</div>
+        </div>
+      </div>
+
+      <!-- Breakdown Bars for Devices, Browsers, Qualities, Countries -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
+        <div class="card" style="margin:0">
+          <div class="card-head"><div class="card-title">📱 الأجهزة المستخدمة</div></div>
+          <div class="card-body" id="devices-breakdown"><div class="empty-state">لا بيانات</div></div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-head"><div class="card-title">🌐 المتصفحات</div></div>
+          <div class="card-body" id="browsers-breakdown"><div class="empty-state">لا بيانات</div></div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-head"><div class="card-title">🎬 الجودات المستخدمة</div></div>
+          <div class="card-body" id="qualities-breakdown"><div class="empty-state">لا بيانات</div></div>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-head"><div class="card-title">🏳️ الدول والمواقع جغرافيًا</div></div>
+          <div class="card-body" id="countries-breakdown"><div class="empty-state">لا بيانات</div></div>
+        </div>
+      </div>
+
+      <!-- Viewers Table -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">قائمة المتصلين بالبث حالياً</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="badge badge-green" id="viewer-count-badge">0</span>
+            <button class="nav-ip-btn" id="ip-toggle-btn" onclick="toggleIPVisibility()" title="إظهار / إخفاء عناوين IP">
+              <svg id="ip-icon-hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+              <svg id="ip-icon-visible" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>العنوان (IP Address)</th>
+                  <th>الجهاز</th>
+                  <th>المتصفح</th>
+                  <th>الجودة المحددة</th>
+                  <th>مدة البقاء</th>
+                  <th>إجراءات إدارية</th>
+                </tr>
+              </thead>
+              <tbody id="viewers-tbody">
+                <tr><td colspan="6" class="empty-state">لا يوجد مشاهدون متصلون حالياً</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Admin (الأمان) -->
+    <div id="tab-admin" style="display:none">
+
+      <!-- Watch Protection (Player auth) -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🔒 حماية صفحة المشاهدة بكلمة مرور</div></div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">تفعيل كلمة مرور المشاهدة</div>
+              <div class="setting-desc">مطالبة المشاهدين بإدخال كلمة مرور قبل التمكن من مشاهدة البث</div>
+            </div>
+            <button class="toggle" id="player-auth-toggle" onclick="togglePlayerAuth()"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">كلمة مرور المشاهدة الجديدة</div>
+              <div class="setting-desc">تعديل كلمة المرور المطلوبة للدخول للبث</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <input id="player-pass" type="password" placeholder="أدخل كلمة مرور المشاهدة">
+              <button class="btn btn-primary" onclick="setPlayerPassword()">حفظ كلمة مرور المشاهدة</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card c-red">
+          <div class="stat-label">المحظورون بشكل دائم</div>
+          <div class="stat-value" id="banned-count">0</div>
+        </div>
+      </div>
+
+      <!-- Ban IP form -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">حظر IP جديد يدويًا</div></div>
+        <div class="card-body">
+          <div class="ban-form">
+            <input id="ban-ip-input" placeholder="عنوان IP، مثال: 1.2.3.4">
+            <input id="ban-reason-input" placeholder="السبب (اختياري)">
+            <button class="btn ban-btn" onclick="banIP()">حظر العنوان</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banned list -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">قائمة العناوين المحظورة دائمًا</div>
+          <button class="btn btn-danger" onclick="clearAllBans()">إلغاء حظر الكل</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>عنوان IP</th>
+                  <th>الجهاز</th>
+                  <th>سبب الحظر</th>
+                  <th>التاريخ والوقت</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="banned-tbody">
+                <tr><td colspan="5" class="empty-state">لا توجد عناوين محظورة</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Geo-Blocking -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🌍 حظر الدول الجغرافي (Geo-Blocking)</div></div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">تفعيل حظر الدول</div>
+              <div class="setting-desc">حظر المشاهدين القادمين من دول معينة تلقائياً من المتابعة</div>
+            </div>
+            <button class="toggle" id="geo-block-toggle" onclick="toggleGeoBlock()"></button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">رموز الدول المحظورة</div>
+              <div class="setting-desc">أدخل رموز الدول ثنائية الحروف مفصولة بفاصلة (مثال: US, CN, RU, GB)</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input id="geo-block-countries-input" type="text" placeholder="US, CN, RU" style="width:250px">
+              <button class="btn btn-primary" onclick="saveGeoBlock()">حفظ وتحديث حظر الدول</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Settings (الإعدادات) -->
+    <div id="tab-settings" style="display:none">
+
+      <!-- Change password for control panel -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🔑 تغيير كلمة مرور لوحة التحكم</div></div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div><div class="setting-label">كلمة المرور الحالية للوحة</div></div>
+            <input id="old-pass" type="password" placeholder="كلمة المرور الحالية">
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">كلمة المرور الجديدة للوحة</div></div>
+            <input id="new-pass" type="password" placeholder="6 أحرف على الأقل">
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-primary" onclick="changePassword()">تحديث كلمة المرور</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stream data reset / cleanup -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">⚠️ إدارة وتطهير بيانات البث</div></div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">تنظيف وإعادة تصفير جميع بيانات البث</div>
+              <div class="setting-desc">مسح عداد المشاهدة القصوى (الذروة) وأحداث الجودة وملخصات البث الحالية</div>
+            </div>
+            <button class="btn btn-danger" onclick="clearStreamData()">تصفير عدادات البث</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-bottom-nav" id="mobileNav">
+  <button class="mobile-nav-item active" data-tab="home" onclick="mTab('home')" type="button">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    الرئيسية
+  </button>
+  <button class="mobile-nav-item" data-tab="viewers" onclick="mTab('viewers')" type="button">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    المشاهدون
+  </button>
+  <button class="mobile-nav-item" data-tab="admin" onclick="mTab('admin')" type="button">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    الأمان
+  </button>
+  <button class="mobile-nav-item" data-tab="settings" onclick="mTab('settings')" type="button">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    الإعدادات
+  </button>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+</div><!-- /#app -->
+
+<script src="/js/dashboard.js?v=1"></script>
+<script>
+/* ── helpers (use dashboard.js `token` global, avoid overriding apiPost/apiDelete) ── */
+function _h()  { return { 'Authorization': 'Bearer ' + token }; }
+function _hj() { return { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + token }; }
+function _post(url, body, cb) {
+  fetch(url, { method:'POST', headers:_hj(), body:JSON.stringify(body) })
+    .then(function(r){ return r.json(); }).then(cb)
+    .catch(function(){ showToast('خطأ في الاتصال'); });
+}
+function _del(url, cb) {
+  fetch(url, { method:'DELETE', headers:_h() })
+    .then(function(r){ return r.json(); }).then(cb)
+    .catch(function(){ showToast('خطأ في الاتصال'); });
+}
+
+function mTab(tab) {
+  var topBtn = document.querySelector('.nav-item[onclick*="' + tab + '"]');
+  if (topBtn) topBtn.click();
+  document.querySelectorAll('.mobile-nav-item').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+  });
+}
+(function() {
+  var orig = window.switchTab;
+  window.switchTab = function(tab, btn) {
+    if (orig) orig.call(this, tab, btn);
+    document.querySelectorAll('.mobile-nav-item').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+  };
+})();
+(function() {
+  function labelTable(table) {
+    var labels = Array.from(table.querySelectorAll('thead th')).map(function(th) {
+      return th.textContent.trim();
+    });
+    table.querySelectorAll('tbody tr').forEach(function(row) {
+      row.querySelectorAll('td').forEach(function(td, i) {
+        if (labels[i]) td.setAttribute('data-label', labels[i]);
+      });
+    });
+  }
+  function initTables() {
+    document.querySelectorAll('table').forEach(function(table) {
+      labelTable(table);
+      var tbody = table.querySelector('tbody');
+      if (tbody) new MutationObserver(function() { labelTable(table); })
+        .observe(tbody, { childList: true, subtree: true });
+    });
+  }
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', initTables)
+    : initTables();
+})();
+
+</script>
+</body>
+</html>
+

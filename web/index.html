@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="theme-color" content="#07070f"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <title>H&amp;K — بث مباشر</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/ovenplayer@latest/dist/ovenplayer.js"></script>
+  <link rel="stylesheet" href="/css/common.css?v=1">
+  <link rel="stylesheet" href="/css/player.css?v=6">
+</head>
+<body class="player-compact">
+
+<!-- ═══════════ AUTH GATE ═══════════ -->
+<div id="auth-gate" class="hidden">
+  <div class="gate-box">
+    <div class="gate-lock">
+      <svg width="28" height="28" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm3 11c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+    </div>
+    <div class="gate-logo">H&amp;K</div>
+    <div class="gate-title">هذا البث حصري<br>أدخل كلمة المرور للمشاهدة</div>
+    <div class="gate-pass-wrap">
+      <input class="gate-input" id="gate-pass" type="password" placeholder="كلمة المرور" maxlength="64" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitGatePassword()">
+      <button class="gate-eye" id="gate-eye" onclick="toggleGateEye()" type="button" title="إظهار/إخفاء كلمة المرور">
+        <svg class="eye-closed" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        <svg class="eye-open" viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>
+      </button>
+    </div>
+    <button class="gate-btn" id="gate-btn" onclick="submitGatePassword()">دخول</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="site-header">
+  <a class="kk-brand hdr-left" href="/" title="H&amp;K Stream">
+    <div class="kk-mark">H&amp;K</div>
+    <div class="kk-text">
+      <span class="kk-word">Stream</span>
+      <div class="live-pill off" id="live-pill">
+        <span class="live-dot"></span>
+        <span id="live-text">جاري الاتصال…</span>
+      </div>
+    </div>
+  </a>
+
+  <div class="hdr-center">
+    <a class="hdr-match" id="hdrMatchCur" href="/matches.html" target="_blank" title="" style="display:none">
+      <span class="hm-tag" id="curTag">جارية الآن</span>
+      <span class="hm-row">
+        <img class="hm-crest" id="curHomeCrest" alt="" onerror="this.style.visibility='hidden'">
+        <span class="hm-code" id="curHome"></span>
+        <span class="hm-mid" id="curMid"></span>
+        <span class="hm-code" id="curAway"></span>
+        <img class="hm-crest" id="curAwayCrest" alt="" onerror="this.style.visibility='hidden'">
+      </span>
+      <span class="hm-cd" id="curCd"></span>
+    </a>
+    <div class="hdr-stat" id="headViewers">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+      <b id="headViewersNum">0</b>
+      <span class="hdr-stat-lbl">مشاهد</span>
+    </div>
+    <a class="hdr-match" id="hdrMatchNext" href="/matches.html" target="_blank" title="" style="display:none">
+      <span class="hm-tag" id="nxtTag">التالية</span>
+      <span class="hm-row">
+        <img class="hm-crest" id="nxtHomeCrest" alt="" onerror="this.style.visibility='hidden'">
+        <span class="hm-code" id="nxtHome"></span>
+        <span class="hm-mid" id="nxtMid"></span>
+        <span class="hm-code" id="nxtAway"></span>
+        <img class="hm-crest" id="nxtAwayCrest" alt="" onerror="this.style.visibility='hidden'">
+      </span>
+      <span class="hm-cd" id="nxtCd"></span>
+    </a>
+  </div>
+
+  <div class="hdr-right">
+    <a class="hdr-icon-btn" href="/help.html" target="_blank" title="تقطيع في البث؟" aria-label="حلّ مشاكل البث">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <span class="hdr-icon-lbl">تقطيع؟</span>
+    </a>
+    <a class="hdr-icon-btn" href="/matches.html" target="_blank" title="جدول المباريات" aria-label="جدول المباريات">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+      <span class="hdr-icon-lbl">جدول المباريات</span>
+    </a>
+  </div>
+</header>
+
+<!-- ═══════════ COUNTDOWN BAR ═══════════ -->
+<div id="countdown-bar" class="countdown-bar hidden">
+  <span class="countdown-label">المباراة القادمة خلال</span>
+  <div class="countdown-digits">
+    <div class="cd-unit"><span id="cd-d">00</span><small>يوم</small></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span id="cd-h">00</span><small>ساعة</small></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span id="cd-m">00</span><small>دقيقة</small></div>
+    <div class="cd-sep">:</div>
+    <div class="cd-unit"><span id="cd-s">00</span><small>ثانية</small></div>
+  </div>
+</div>
+
+
+<!-- ═══════════ PLAYER ═══════════ -->
+<div class="player-section" style="position:relative;">
+  <div class="ambient-glow" id="ambientGlow"></div>
+  <div class="yt-wrap" id="ytWrap">
+    <div class="yt-ratio">
+
+      <div class="yt-offline" id="ytOffline">
+        <div class="yt-offline-logo">H&amp;K</div>
+        <div class="yt-offline-text" id="ytOfflineText" style="display:none"></div>
+        <div class="yt-offline-waiting">في انتظار البث…</div>
+        <div class="yt-spinner-wrap">
+          <div class="yt-spinner-outer"></div>
+          <div class="yt-spinner-inner"></div>
+        </div>
+      </div>
+
+      <div class="yt-top-grad"></div>
+      <div id="ytVideo" style="width:100%;height:100%;position:absolute;inset:0;background:#000;"></div>
+
+      <!-- Tap to play (autoplay blocked on mobile) -->
+      <div id="tapToPlay" onclick="handleTapToPlay(event)" style="display:none">
+        <div class="ttp-btn">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div class="ttp-label">اضغط للمشاهدة</div>
+      </div>
+      <div id="brightness-overlay" style="position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;z-index:3;transition:opacity .05s;"></div>
+      <div class="yt-buffer" id="ytBuffer"></div>
+
+      <div id="ytRipple" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.5);width:80px;height:80px;background:rgba(0,0,0,.5);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5;opacity:0;transition:transform .16s var(--ease),opacity .16s;backdrop-filter:blur(2px);">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+
+      <!-- Context Menu -->
+      <div id="player-context-menu">
+        <div class="context-menu-item" onclick="togglePiP()" id="context-pip-item" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11h-8v6h8v-6zm4 8V5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 0H3V5h18v14z"/></svg>
+          صورة داخل صورة (P)
+        </div>
+        <div class="context-menu-item" onclick="toggleStatsNerds()">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+          إحصائيات تقنية
+        </div>
+      </div>
+
+      <!-- Stats for Nerds -->
+      <div id="stats-nerds">
+        <div class="stats-close" onclick="toggleStatsNerds()">✕ اغلاق</div>
+        <div style="clear:both;margin-bottom:8px;"></div>
+        <div class="stats-row"><span>Resolution</span><span id="stat-res">—</span></div>
+        <div class="stats-row"><span>Buffer Health</span><span id="stat-buf">0.0s</span></div>
+        <div class="stats-row"><span>Latency</span><span id="stat-lat">0.0s</span></div>
+        <div class="stats-row"><span>Connection</span><span id="stat-conn">WebRTC</span></div>
+        <div class="stats-row"><span>Dropped Frames</span><span id="stat-dropped">0</span></div>
+      </div>
+
+    </div>
+
+    <div class="yt-ctrl" id="ytCtrl">
+      <div class="yt-bar">
+        <button class="yt-btn" id="ytPlayBtn" onclick="togglePlay()" title="تشغيل / إيقاف (مسافة)">
+          <svg id="ytIcoPlay"  width="30" height="30" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="ytIcoPause" width="30" height="30" viewBox="0 0 24 24" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+
+        <div class="yt-vol">
+          <button class="yt-btn" id="ytMuteBtn" onclick="toggleMute()" title="كتم (M)">
+            <svg id="ytVolHigh" width="26" height="26" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <svg id="ytVolLow"  width="26" height="26" viewBox="0 0 24 24" style="display:none"><path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/></svg>
+            <svg id="ytVolMute" width="26" height="26" viewBox="0 0 24 24" style="display:none"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+          </button>
+          <div class="yt-vol-slide-wrap">
+            <input type="range" class="yt-vol-slider" id="ytVolSlider" min="0" max="100" value="100" oninput="setVolume(this.value/100)">
+          </div>
+        </div>
+
+        <div class="yt-time" id="ytTime"></div>
+
+        <div class="yt-bar-r">
+          <div class="yt-q-wrap" id="ytQWrap" style="display:none">
+            <button class="yt-gear-btn" id="ytQBtn" onclick="toggleQMenu(event)" title="الجودة">
+              <svg width="20" height="20" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              <span class="yt-gear-lbl" id="ytQLabel">تلقائي</span>
+            </button>
+            <div class="yt-q-menu" id="ytQMenu"></div>
+          </div>
+
+          <button class="yt-btn" id="ytPipBtn" onclick="togglePiP()" title="صورة داخل صورة (P)" style="display:none">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11h-8v6h8v-6zm4 8V5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 0H3V5h18v14z"/></svg>
+          </button>
+
+          <button class="yt-btn" id="ytWideBtn" onclick="toggleWideMode()" title="توسيط">
+            <svg width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H5V8h14v8z"/></svg>
+          </button>
+
+          <button class="yt-btn" id="ytFsBtn" onclick="toggleFullscreen()" title="ملء الشاشة (F)">
+            <svg id="ytFsOn"  width="24" height="24" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            <svg id="ytFsOff" width="24" height="24" viewBox="0 0 24 24" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ MATCHES SECTION ═══════════ -->
+<section class="matches-section" id="matchesSection">
+  <div class="matches-header-bar">
+    <div class="matches-title-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold)"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zm-1 3c0 1.65-1.35 3-3 3s-3-1.35-3-3V5h6v3zM5 8V7h2v4c-1.1-.49-2-1.63-2-3z"/></svg>
+      <span class="matches-ttl">مباريات اليوم</span>
+    </div>
+    <div class="matches-meta-wrap">
+      <a href="/matches.html" class="all-matches-link">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm-7-7h5v5h-5z"/></svg>
+        جدول كامل
+        <span class="all-matches-badge" id="allMatchesBadge"></span>
+      </a>
+      <button class="matches-refresh-btn" id="matchesRefreshBtn" onclick="loadMatches(true)" title="تحديث">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="matchesList" class="matches-list">
+    <div class="matches-loading">
+      <div class="matches-spinner"></div>
+      <span>جاري تحميل المباريات…</span>
+    </div>
+  </div>
+</section>
+
+
+
+<div id="toast"></div>
+
+<footer class="site-footer">H&amp;K Stream</footer>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script src="/js/player.js?v=7"></script>
+<script src="/js/matches-common.js?v=4"></script>
+<script>
+
+/* ── HEADER: nearest live/upcoming match chip ── */
+function _hmTime(utc){
+  try{ return window.saudiTime(utc); }   // 12 ساعة بتوقيت السعودية (ص/م) — موحّد مع بطاقات المباريات
+  catch(e){ return ''; }
+}
+function _fillMatchPill(elId, pfx, pick, state){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  var cd=document.getElementById(pfx+'Cd');
+  if(!pick){
+    el.style.display='none';
+    if(cd){ cd.textContent=''; cd.style.display='none'; cd.removeAttribute('data-utc'); }
+    return;
+  }
+  var isLive=(state==='live'), isDone=(state==='done');
+  var h=pick.homeTeam||{}, a=pick.awayTeam||{}, sc=pick.score||{};
+  var hc=document.getElementById(pfx+'HomeCrest'), ac=document.getElementById(pfx+'AwayCrest');
+  hc.style.visibility=''; ac.style.visibility='';
+  hc.src=h.crest||''; ac.src=a.crest||'';
+  var hName=teamAr(h.shortName||h.name||''), aName=teamAr(a.shortName||a.name||'');
+  document.getElementById(pfx+'Home').textContent=hName;
+  document.getElementById(pfx+'Away').textContent=aName;
+  var mid;
+  if(isLive || isDone || sc.home!=null){
+    mid=(sc.home==null?0:sc.home)+'-'+(sc.away==null?0:sc.away);
+  } else {
+    mid=_hmTime(pick.utcDate);
+  }
+  document.getElementById(pfx+'Mid').textContent=mid;
+  var tag=document.getElementById(pfx+'Tag');
+  if(tag) tag.textContent = isLive?'جارية الآن' : isDone?'انتهت' : (pfx==='cur'?'قريباً':'التالية');
+  el.classList.toggle('live', isLive);
+  el.classList.toggle('done', isDone);
+  if(cd){
+    if(!isLive && !isDone){ cd.setAttribute('data-utc', pick.utcDate); cd.style.display=''; }
+    else { cd.textContent=''; cd.style.display='none'; cd.removeAttribute('data-utc'); }
+  }
+  el.title=hName+'  '+mid+'  '+aName+(isLive?'  (مباشر الآن)':isDone?'  (انتهت)':'  ('+_hmTime(pick.utcDate)+')');
+  el.style.display='';
+}
+
+function updateHeaderMatch(matches){
+  matches=(matches||[]).filter(function(m){return m.status!=='CANCELLED' && m.status!=='POSTPONED';});
+  var now=Date.now();
+  var byDate=function(a,b){return new Date(a.utcDate)-new Date(b.utcDate);};
+  var sorted=matches.slice().sort(byDate);
+  var live=sorted.filter(function(m){return STATUS_LIVE[m.status];});
+  var upcoming=sorted.filter(function(m){return !STATUS_DONE[m.status] && !STATUS_LIVE[m.status] && new Date(m.utcDate).getTime()>now-60000;});
+  var finished=sorted.filter(function(m){return STATUS_DONE[m.status];});
+  // اليمين = الأقرب زمنياً: جارية ← قريبة ← آخر منتهية
+  var primary=null, pstate=null;
+  if(live.length){ primary=live[0]; pstate='live'; }
+  else if(upcoming.length){ primary=upcoming[0]; pstate='upcoming'; }
+  else if(finished.length){ primary=finished[finished.length-1]; pstate='done'; }
+  // اليسار = أول مباراة قادمة تبدأ بعد توقيت اليمين (مثل أول مباراة الغد)
+  var secondary=null;
+  if(primary){
+    var pk=new Date(primary.utcDate).getTime();
+    for(var i=0;i<upcoming.length;i++){
+      if(new Date(upcoming[i].utcDate).getTime()>pk){ secondary=upcoming[i]; break; }
+    }
+  } else if(upcoming.length){ secondary=upcoming[0]; }
+  _fillMatchPill('hdrMatchCur',  'cur', primary,   pstate);
+  _fillMatchPill('hdrMatchNext', 'nxt', secondary, 'upcoming');
+  _curIsLive = (pstate==='live');
+  _soonestUpcomingUtc = (pstate==='upcoming') ? primary.utcDate : (secondary ? secondary.utcDate : null);
+  _kickoffFired = false;
+  _scheduleSmartRefresh();
+}
+
+/* ── تحديث ذكي تكيّفي للهيدر ── */
+var _soonestUpcomingUtc = null, _curIsLive = false, _kickoffFired = false, _matchTimer = null;
+function _scheduleSmartRefresh(){
+  if(_matchTimer) clearTimeout(_matchTimer);
+  var iv;
+  if(_curIsLive){
+    iv = 60000;                                   // مباراة جارية → افحص كل دقيقة لرصد انتهائها
+  } else if(_soonestUpcomingUtc){
+    var d = new Date(_soonestUpcomingUtc).getTime() - Date.now();
+    iv = (d > 0 && d < 300000) ? 30000 : 300000;  // قرب الانطلاق (<5د) → كل 30ث، وإلا كل 5د
+  } else {
+    iv = 300000;
+  }
+  _matchTimer = setTimeout(function(){ if(window.loadMatches) loadMatches(); }, iv);
+}
+
+/* ── INDEX: today only ── */
+(function(){
+  window.loadMatches = function(){
+    var btn=document.getElementById('matchesRefreshBtn');
+    if(btn) btn.classList.add('spinning');
+    fetch('/tracker-api/matches')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var all=d.matches||[];
+        var all2=all.filter(function(m){return m.status!=='FINISHED';});
+        var today=all2.filter(function(m){return isTodaySaudi(m.utcDate);});
+        var other=all2.filter(function(m){return !isTodaySaudi(m.utcDate);});
+        renderGroups(today,'matchesList',false);
+        var badge=document.getElementById('allMatchesBadge');
+        if(badge) badge.textContent=other.length>0?'+'+other.length:'';
+        updateHeaderMatch(all);
+        if(btn) btn.classList.remove('spinning');
+      })
+      .catch(function(){
+        var list=document.getElementById('matchesList');
+        if(list) list.innerHTML='<div class="matches-empty">تعذر تحميل المباريات</div>';
+        if(btn) btn.classList.remove('spinning');
+        _scheduleSmartRefresh();   // أعد المحاولة لاحقاً حتى لو فشل التحميل
+      });
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    loadMatches();   // يعيد جدولة نفسه تلقائياً عبر _scheduleSmartRefresh
+  });
+})();
+
+/* ── MATCH COUNTDOWN ── (_fmtDiff في matches-common.js) */
+setInterval(function(){
+  var now=Date.now();
+  document.querySelectorAll('[data-cntdn]').forEach(function(el){
+    var diff=new Date(el.dataset.cntdn).getTime()-now;
+    var txt=_fmtDiff(diff, el.dataset.cntdn);
+    if(!txt){el.textContent='';return;}
+    el.textContent=txt;
+    el.className='m-countdown'+(diff<300000?' urgent':diff<3600000?' soon':'');
+  });
+  // عدّادات الهيدر (اليمين/اليسار) + تحديث فوري لحظة انطلاق أقرب مباراة
+  var anyFired=false;
+  document.querySelectorAll('.hm-cd').forEach(function(cd){
+    var u=cd.getAttribute('data-utc');
+    if(!u){ cd.textContent=''; return; }
+    var d=new Date(u).getTime()-now;
+    if(d>0){ cd.textContent=_fmtDiff(d, u)||''; cd.style.display=''; }
+    else{ cd.textContent=''; cd.style.display='none'; anyFired=true; }
+  });
+  if(anyFired && !_kickoffFired){ _kickoffFired=true; if(window.loadMatches) loadMatches(); }
+},1000);
+
+/* ── SITE SETTINGS ── */
+function applySiteSettings(s){
+  var ms=document.getElementById('matchesSection');
+  if(ms) ms.style.display=s.show_matches===false?'none':'';
+  document.body.classList.toggle('hide-cd-bar', s.show_countdown_bar===false);
+}
+fetch('/tracker-api/site-settings').then(function(r){return r.json();}).then(applySiteSettings).catch(function(){});
+</script>
+
+</body>
+</html>

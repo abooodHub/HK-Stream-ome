@@ -1,0 +1,13 @@
+{
+  "name": "H&K Stream",
+  "short_name": "H&K",
+  "description": "H&K بث مباشر حصري",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#07070f",
+  "background_color": "#07070f",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

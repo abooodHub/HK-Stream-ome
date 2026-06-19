@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#07070f"/>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <title>H&amp;K — جدول المباريات</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/css/common.css?v=1">
+  <link rel="stylesheet" href="/css/player.css?v=6">
+  <style>
+    body{min-height:100vh;background:var(--bg)}
+    .mp-header{
+      display:flex;align-items:center;justify-content:center;
+      padding:14px clamp(14px,3vw,26px);
+      background:rgba(10,10,18,.9);
+      border-bottom:1px solid var(--border);
+      backdrop-filter:blur(12px);
+      position:sticky;top:0;z-index:50;
+    }
+    .mp-back{
+      position:absolute;right:clamp(14px,3vw,26px);top:50%;transform:translateY(-50%);
+      display:flex;align-items:center;gap:6px;
+      color:var(--text2);text-decoration:none;font-size:.82rem;
+      padding:6px 12px;border-radius:8px;border:1px solid var(--line);
+      background:rgba(255,255,255,.04);transition:background .2s,color .2s;
+    }
+    .mp-back:hover{background:rgba(255,255,255,.08);color:var(--text)}
+    .mp-title{
+      font-size:.95rem;font-weight:700;color:var(--text);
+      display:flex;align-items:center;gap:8px;
+    }
+
+    /* Day tabs */
+    .day-tabs{
+      display:flex;gap:6px;
+      max-width:1340px;margin:16px auto 0;
+      padding:0 clamp(14px,3vw,26px);
+      flex-wrap:wrap;
+    }
+    .day-tab{
+      padding:7px 18px;border-radius:20px;cursor:pointer;
+      font-family:var(--font);font-size:.8rem;font-weight:600;
+      border:1px solid var(--line);background:rgba(255,255,255,.04);
+      color:var(--text2);transition:all .2s;white-space:nowrap;
+    }
+    .day-tab:hover{background:rgba(255,255,255,.08);color:var(--text)}
+    .day-tab.active{
+      background:var(--gold);color:#06060c;
+      border-color:var(--gold);
+    }
+    .day-tab .tab-cnt{
+      display:inline-flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.2);border-radius:10px;
+      font-size:.68rem;padding:1px 5px;margin-right:4px;
+    }
+    .day-tab.active .tab-cnt{background:rgba(0,0,0,.25)}
+
+    /* Live pulse dot in tab */
+    .live-dot-tab{
+      display:inline-block;width:6px;height:6px;border-radius:50%;
+      background:#ff4444;margin-left:5px;
+      animation:pulse-dot 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+
+    .matches-section{max-width:1340px;margin:14px auto 0;padding:0 clamp(14px,3vw,26px) 40px}
+
+    .live-section-badge{
+      display:inline-flex;align-items:center;gap:5px;
+      background:rgba(220,40,40,.15);color:#ff5252;
+      border:1px solid rgba(220,40,40,.25);
+      border-radius:20px;padding:2px 10px;font-size:.7rem;font-weight:700;
+      margin-right:8px;
+    }
+
+    /* ── Responsive header ── */
+    @media(max-width:480px){
+      .mp-header{padding:11px clamp(10px,3vw,16px);gap:6px}
+      .mp-title{font-size:.86rem}
+      .mp-back{padding:6px 10px;font-size:.76rem}
+    }
+    @media(max-width:380px){
+      .mp-header{padding:10px 12px}
+      .mp-title{font-size:.82rem}
+      .mp-back{font-size:.72rem;padding:5px 8px}
+    }
+
+    /* ── Day tabs on very small ── */
+    @media(max-width:380px){
+      .day-tabs{gap:5px;padding:0 clamp(10px,3vw,16px);margin-top:12px}
+      .day-tab{padding:5px 12px;font-size:.72rem}
+    }
+
+    /* ── Page bottom space ── */
+    body{padding-bottom:env(safe-area-inset-bottom,0px)}
+  </style>
+</head>
+<body>
+
+<header class="mp-header">
+  <a href="/" class="mp-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    العودة للبث
+  </a>
+  <div class="mp-title">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="var(--gold)"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm-7-7h5v5h-5z"/></svg>
+    جدول المباريات
+    <span id="liveBadge" style="display:none" class="live-section-badge">
+      <span class="live-dot-tab"></span> مباشر
+    </span>
+  </div>
+</header>
+
+<!-- Matches -->
+<section class="matches-section">
+  <div id="matchesList" class="matches-list">
+    <div class="matches-loading">
+      <div class="matches-spinner"></div>
+      <span>جاري تحميل المباريات…</span>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  H&amp;K Stream &mdash; <a href="/">العودة للبث المباشر</a>
+</footer>
+
+<script src="/js/matches-common.js?v=4"></script>
+<script>
+
+var _allMatches=[];
+var _activeDay='all';
+
+function buildTabs(matches){
+  var days={}, dayOrder=[];
+  matches.forEach(function(m){
+    var ds=saudiDateStr(m.utcDate);
+    if(!days[ds]){days[ds]={count:0,live:0};dayOrder.push(ds);}
+    days[ds].count++;
+    if(STATUS_LIVE[m.status]) days[ds].live++;
+  });
+  var tabs=document.getElementById('dayTabs');
+  if(!tabs) return;
+  var totalLive=matches.filter(function(m){return STATUS_LIVE[m.status];}).length;
+  var html='<button class="day-tab'+((_activeDay==='all')?' active':'')+'" onclick="setDay(\'all\')">'+
+    'الكل <span class="tab-cnt">'+matches.length+'</span>'+
+    (totalLive?'<span class="live-dot-tab"></span>':'')+
+  '</button>';
+  dayOrder.forEach(function(ds){
+    var lbl=dayLabel(ds);
+    html+='<button class="day-tab'+((_activeDay===ds)?' active':'')+'" onclick="setDay(\''+ds+'\')">'+
+      lbl+' <span class="tab-cnt">'+days[ds].count+'</span>'+
+      (days[ds].live?'<span class="live-dot-tab"></span>':'')+
+    '</button>';
+  });
+  tabs.innerHTML=html;
+}
+
+function renderActive(){
+  var filtered=_activeDay==='all'?_allMatches:_allMatches.filter(function(m){return saudiDateStr(m.utcDate)===_activeDay;});
+  var list=document.getElementById('matchesList');
+  if(!list) return;
+  if(!filtered.length){list.innerHTML='<div class="matches-empty">لا توجد مباريات</div>';return;}
+  var groups={};
+  filtered.forEach(function(m){
+    var key=m.competition.code;
+    if(!groups[key]) groups[key]={comp:m.competition,items:[]};
+    groups[key].items.push(m);
+  });
+  var html='';
+  Object.keys(groups).forEach(function(code){
+    var g=groups[code];
+    var arName=COMP_AR[code]||g.comp.name;
+    var emblem=g.comp.emblem?'<img class="comp-emblem" src="'+g.comp.emblem+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
+    html+='<div class="comp-block"><div class="comp-header">'+emblem+'<span>'+arName+'</span></div>';
+    g.items.forEach(function(m){html+=renderMatch(m);});
+    html+='</div>';
+  });
+  list.innerHTML=html;
+
+  // live badge in header
+  var anyLive=filtered.some(function(m){return STATUS_LIVE[m.status];});
+  var lb=document.getElementById('liveBadge');
+  if(lb) lb.style.display=anyLive?'':'none';
+}
+
+function setDay(ds){
+  _activeDay=ds;
+  buildTabs(_allMatches);
+  renderActive();
+}
+
+function refresh(){
+  var btn=document.getElementById('refreshBtn');
+  if(btn) btn.classList.add('spinning');
+  fetch('/tracker-api/matches')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      _allMatches=(d.matches||[]).filter(function(m){return m.status!=='FINISHED';});
+      buildTabs(_allMatches);
+      renderActive();
+      if(btn) btn.classList.remove('spinning');
+    })
+    .catch(function(){
+      var list=document.getElementById('matchesList');
+      if(list) list.innerHTML='<div class="matches-empty">تعذر تحميل المباريات</div>';
+      if(btn) btn.classList.remove('spinning');
+    });
+}
+
+// عرض كل المباريات في صفحة واحدة (بدون تبويبات أيام)
+_activeDay = 'all';
+refresh();
+setInterval(refresh, 5*60*1000);
+
+// Per-match countdown
+setInterval(function(){
+  var now=Date.now();
+  document.querySelectorAll('[data-cntdn]').forEach(function(el){
+    var diff=new Date(el.dataset.cntdn).getTime()-now;
+    var txt=_fmtDiff(diff, el.dataset.cntdn);
+    if(!txt){el.textContent='';return;}
+    el.textContent=txt;
+    el.className='m-countdown'+(diff<300000?' urgent':diff<3600000?' soon':'');
+  });
+},1000);
+</script>
+</body>
+</html>
