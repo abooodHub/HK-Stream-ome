@@ -156,6 +156,7 @@ total_bytes_received = 0.0
 total_hls_bytes_sent = 0.0
 last_poll_time = time.time()
 stream_gated = False          # عند True يرى المشاهدون البث كأنه متوقف
+ome_api_fail_count = 0        # عدد فشل متتالي للـ OME API (كل 5s) — بعد 6 = offline
 
 
 # --- الحظر/الطرد عبر iptables ---

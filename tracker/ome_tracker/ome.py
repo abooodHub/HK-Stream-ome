@@ -164,8 +164,16 @@ def poller():
             store.last_poll_time = now
 
             if streams_res is None:
-                # API غير متاح — أبقِ حالة الـ webhook وحدّث وقت التشغيل فقط
-                if store.stream_meta.get("online") and store.stream_meta.get("started_at", 0) > 0:
+                store.ome_api_fail_count += 1
+                if store.ome_api_fail_count >= 6:
+                    # 30 ثانية بدون API → نعتبر البث توقف
+                    with store.lock:
+                        store.stream_meta["online"] = False
+                        store.stream_meta["bw_in"] = 0
+                        store.stream_meta["bw_out"] = 0
+                        store.stream_meta["time_ms"] = 0
+                elif store.stream_meta.get("online") and store.stream_meta.get("started_at", 0) > 0:
+                    # API مؤقتاً غير متاح — أبقِ الحالة وحدّث الوقت فقط
                     with store.lock:
                         store.stream_meta["last_active_time"] = now
                         store.stream_meta["time_ms"] = int((now - store.stream_meta["started_at"]) * 1000)
@@ -178,6 +186,7 @@ def poller():
                             store.stream_meta["bytes_out"] = store.stream_meta.get("bytes_out", 0) + int((bw_out / 8.0) * dt)
                             store.total_hls_bytes_sent = store.stream_meta["bytes_out"]
             elif online:
+                store.ome_api_fail_count = 0
                 if bitrate <= 0:
                     bitrate = 6000000  # 6 Mbps افتراضي احتياطي
 
@@ -200,6 +209,7 @@ def poller():
                     store.stream_meta["video"] = {"width": v_width, "height": v_height, "codec": v_codec}
                     store.stream_meta["audio"] = {"codec": a_codec, "samplerate": 48000}
             else:
+                store.ome_api_fail_count = 0
                 with store.lock:
                     store.stream_meta["online"] = False
                     store.stream_meta["bw_in"] = 0

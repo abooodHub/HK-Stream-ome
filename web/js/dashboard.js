@@ -304,7 +304,7 @@ function updateUI(d) {
         ramVal.textContent = ram.used_mb + ' / ' + ram.total_mb + ' MB (' + ram.percent + '%)';
         if (ram.percent >= 85) { ramVal.style.color = 'var(--red)';   if (ramBar) ramBar.style.background = 'linear-gradient(90deg,var(--red),#f87171)'; }
         else if (ram.percent >= 65) { ramVal.style.color = 'var(--amber)'; if (ramBar) ramBar.style.background = 'linear-gradient(90deg,var(--amber),#fbbf24)'; }
-        else { ramVal.style.color = 'var(--amber)'; if (ramBar) ramBar.style.background = 'linear-gradient(90deg,var(--amber),#fbbf24)'; }
+        else { ramVal.style.color = 'var(--green)'; if (ramBar) ramBar.style.background = 'linear-gradient(90deg,var(--green),#34d399)'; }
     }
     if (ramBar) ramBar.style.width = ram.percent + '%';
 
