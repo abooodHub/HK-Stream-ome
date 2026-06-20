@@ -57,10 +57,16 @@
       <span class="hm-row">
         <img class="hm-crest" id="curHomeCrest" alt="" onerror="this.style.visibility='hidden'">
         <span class="hm-code" id="curHome"></span>
+        <span class="hm-scoreboard" id="curScoreboard" style="display:none">
+          <span class="hm-sn" id="curScoreH">0</span>
+          <span class="hm-ssep">:</span>
+          <span class="hm-sn" id="curScoreA">0</span>
+        </span>
         <span class="hm-mid" id="curMid"></span>
         <span class="hm-code" id="curAway"></span>
         <img class="hm-crest" id="curAwayCrest" alt="" onerror="this.style.visibility='hidden'">
       </span>
+      <span class="hm-min" id="curMin" style="display:none"></span>
       <span class="hm-cd" id="curCd"></span>
     </a>
     <div class="hdr-stat" id="headViewers">
@@ -82,6 +88,13 @@
   </div>
 
   <div class="hdr-right">
+    <a class="hdr-icon-btn hdr-btn-tv" href="https://dis.aboodfull2.site/" target="_blank" title="مشغل التلفاز ومتعدد الجودات — للي ماعنده الياف">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+      <span class="hdr-icon-lbl">
+        <span style="display:block;font-size:.8rem;font-weight:800;line-height:1.2">مشغل التلفاز ومتعدد الجودات</span>
+        <span style="display:block;font-size:.65rem;font-weight:600;opacity:.7;line-height:1.2">للي ماعنده الياف</span>
+      </span>
+    </a>
     <a class="hdr-icon-btn" href="/help.html" target="_blank" title="تقطيع في البث؟" aria-label="حلّ مشاكل البث">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
       <span class="hdr-icon-lbl">تقطيع؟</span>
@@ -256,6 +269,12 @@ function _hmTime(utc){
   try{ return window.saudiTime(utc); }   // 12 ساعة بتوقيت السعودية (ص/م) — موحّد مع بطاقات المباريات
   catch(e){ return ''; }
 }
+function _scoreFlash(el){
+  el.classList.remove('score-flash');
+  void el.offsetWidth;
+  el.classList.add('score-flash');
+  setTimeout(function(){ el.classList.remove('score-flash'); }, 900);
+}
 function _fillMatchPill(elId, pfx, pick, state){
   var el=document.getElementById(elId);
   if(!el) return;
@@ -266,6 +285,7 @@ function _fillMatchPill(elId, pfx, pick, state){
     return;
   }
   var isLive=(state==='live'), isDone=(state==='done');
+  if(pfx==='cur') window._curPickMatch = isLive ? pick : null;
   var h=pick.homeTeam||{}, a=pick.awayTeam||{}, sc=pick.score||{};
   var hc=document.getElementById(pfx+'HomeCrest'), ac=document.getElementById(pfx+'AwayCrest');
   hc.style.visibility=''; ac.style.visibility='';
@@ -273,22 +293,43 @@ function _fillMatchPill(elId, pfx, pick, state){
   var hName=teamAr(h.shortName||h.name||''), aName=teamAr(a.shortName||a.name||'');
   document.getElementById(pfx+'Home').textContent=hName;
   document.getElementById(pfx+'Away').textContent=aName;
-  var mid;
-  if(isLive || isDone || sc.home!=null){
-    mid=(sc.home==null?0:sc.home)+'-'+(sc.away==null?0:sc.away);
-  } else {
-    mid=_hmTime(pick.utcDate);
-  }
-  document.getElementById(pfx+'Mid').textContent=mid;
   var tag=document.getElementById(pfx+'Tag');
   if(tag) tag.textContent = isLive?'جارية الآن' : isDone?'انتهت' : (pfx==='cur'?'قريباً':'التالية');
   el.classList.toggle('live', isLive);
   el.classList.toggle('done', isDone);
+  /* ── عرض النتيجة ── */
+  var sb=document.getElementById(pfx+'Scoreboard');
+  var midEl=document.getElementById(pfx+'Mid');
+  if(isLive || isDone){
+    var sh=sc.home==null?0:sc.home, sa=sc.away==null?0:sc.away;
+    if(sb){
+      var shEl=document.getElementById(pfx+'ScoreH'), saEl=document.getElementById(pfx+'ScoreA');
+      if(shEl && String(sh)!==shEl.textContent){ shEl.textContent=sh; _scoreFlash(shEl); }
+      if(saEl && String(sa)!==saEl.textContent){ saEl.textContent=sa; _scoreFlash(saEl); }
+      sb.style.display='';
+    }
+    if(midEl){ midEl.style.display='none'; midEl.textContent=''; }
+  } else {
+    if(sb) sb.style.display='none';
+    if(midEl){ midEl.style.display=''; midEl.textContent=_hmTime(pick.utcDate); }
+  }
+  /* ── دقيقة المباراة المباشرة ── */
+  var minEl=document.getElementById(pfx+'Min');
+  if(minEl){
+    if(isLive && window.getMatchMinute){
+      var mn=getMatchMinute(pick);
+      if(mn){ minEl.textContent=mn; minEl.style.display=''; minEl.setAttribute('data-match-id', pick.id||''); }
+      else  { minEl.style.display='none'; }
+    } else {
+      minEl.style.display='none';
+    }
+  }
   if(cd){
     if(!isLive && !isDone){ cd.setAttribute('data-utc', pick.utcDate); cd.style.display=''; }
     else { cd.textContent=''; cd.style.display='none'; cd.removeAttribute('data-utc'); }
   }
-  el.title=hName+'  '+mid+'  '+aName+(isLive?'  (مباشر الآن)':isDone?'  (انتهت)':'  ('+_hmTime(pick.utcDate)+')');
+  var _scoreTxt = (isLive||isDone) ? (sc.home+':'+sc.away) : _hmTime(pick.utcDate);
+  el.title=hName+'  '+_scoreTxt+'  '+aName+(isLive?' (مباشر الآن)':isDone?' (انتهت)':'');
   el.style.display='';
 }
 
@@ -387,6 +428,12 @@ setInterval(function(){
     else{ cd.textContent=''; cd.style.display='none'; anyFired=true; }
   });
   if(anyFired && !_kickoffFired){ _kickoffFired=true; if(window.loadMatches) loadMatches(); }
+  /* تحديث دقيقة المباراة المباشرة */
+  if(window.getMatchMinute && window._curPickMatch){
+    var mn=getMatchMinute(window._curPickMatch);
+    var minEl=document.getElementById('curMin');
+    if(minEl && minEl.style.display!=='none' && mn) minEl.textContent=mn;
+  }
 },1000);
 
 /* ── SITE SETTINGS ── */

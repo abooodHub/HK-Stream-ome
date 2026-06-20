@@ -323,6 +323,15 @@ class Handler(BaseHTTPRequestHandler):
             except Exception: pass
             self._json(200, {"ok": True, "settings": store.site_settings})
 
+        elif p == "/api/football-api-key":
+            if not self._bearer(): return self._json(401, {"error": "unauthorized"})
+            body = self._body()
+            key = str(body.get("key", "")).strip()
+            store.football_api_key = key
+            store.save(config.FOOTBALL_API_KEY_FILE, {"key": key})
+            matches.matches_cache_time = 0  # أجبر إعادة الجلب
+            self._json(200, {"ok": True})
+
         else:
             self._json(404, {"error": "not found"})
 
@@ -493,6 +502,12 @@ class Handler(BaseHTTPRequestHandler):
 
         elif p == "/api/site-settings":
             self._json(200, store.site_settings, public=True)
+
+        elif p == "/api/football-api-key":
+            if not self._bearer(): return self._json(401, {"error": "unauthorized"})
+            key = store.football_api_key or ""
+            masked = (key[:4] + "••••" + key[-4:]) if len(key) > 8 else ("••••" if key else "")
+            self._json(200, {"set": bool(key), "masked": masked})
 
         else:
             self._json(404, {"error": "not found"})

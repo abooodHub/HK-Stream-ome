@@ -169,15 +169,6 @@ window.saudiTime = function(utc){
   var ap = h>=12?'م':'ص'; h = h%12||12;
   return h+':'+('0'+m).slice(-2)+' '+ap;
 };
-window.saudiDay = function(utc){
-  var now = new Date(Date.now()+3*3600000);
-  var d   = new Date(new Date(utc).getTime()+3*3600000);
-  if(d.getUTCFullYear()===now.getUTCFullYear()&&d.getUTCMonth()===now.getUTCMonth()&&d.getUTCDate()===now.getUTCDate()) return 'اليوم';
-  var tom = new Date(now.getTime()+86400000);
-  if(d.getUTCFullYear()===tom.getUTCFullYear()&&d.getUTCMonth()===tom.getUTCMonth()&&d.getUTCDate()===tom.getUTCDate()) return 'غداً';
-  var days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-  return days[d.getUTCDay()];
-};
 window.isTodaySaudi = function(utc){
   var now = new Date(Date.now()+3*3600000);
   var d   = new Date(new Date(utc).getTime()+3*3600000);
@@ -236,30 +227,35 @@ window.nowSaudiDateStr = function(){
   var d=new Date(Date.now()+3*3600000);
   return d.getUTCFullYear()+'-'+d.getUTCMonth()+'-'+d.getUTCDate();
 };
-window.tomorrowSaudiDateStr = function(){
-  var d=new Date(Date.now()+3*3600000+86400000);
-  return d.getUTCFullYear()+'-'+d.getUTCMonth()+'-'+d.getUTCDate();
-};
-window.day3SaudiDateStr = function(){
-  var d=new Date(Date.now()+3*3600000+2*86400000);
-  return d.getUTCFullYear()+'-'+d.getUTCMonth()+'-'+d.getUTCDate();
-};
 window.dayLabel = function(ds){
-  var t=nowSaudiDateStr(), tom=tomorrowSaudiDateStr(), d3=day3SaudiDateStr();
+  var t=nowSaudiDateStr();
   if(ds===t) return 'اليوم';
-  if(ds===tom) return 'غداً';
-  if(ds===d3) return 'بعد غد';
-  return ds;
+  // استخرج اسم اليوم الحقيقي من التاريخ
+  var parts=ds.split('-'); // year-month-date (0-based month)
+  var d=new Date(Date.UTC(+parts[0],+parts[1],+parts[2]));
+  var days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  return days[d.getUTCDay()];
 };
 window.saudiDayName = function(utc){
   var d=new Date(new Date(utc).getTime()+3*3600000);
   var ds=d.getUTCFullYear()+'-'+d.getUTCMonth()+'-'+d.getUTCDate();
-  var t=nowSaudiDateStr(),tom=tomorrowSaudiDateStr(),d3=day3SaudiDateStr();
+  var t=nowSaudiDateStr();
   if(ds===t) return 'اليوم';
-  if(ds===tom) return 'غداً';
-  if(ds===d3) return 'بعد غد';
   var days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
   return days[d.getUTCDay()];
+};
+
+/* ── Live match minute estimator ── */
+window.getMatchMinute = function(m){
+  var s=m.status;
+  if(s==='PAUSED')           return 'ر.و';
+  if(s==='PENALTY_SHOOTOUT') return 'ر.ج';
+  if(!STATUS_LIVE[s])        return null;
+  var elapsed=Math.floor((Date.now()-new Date(m.utcDate).getTime())/60000);
+  if(elapsed<0) return null;
+  if(s==='EXTRA_TIME') return Math.max(91,Math.min(elapsed-17+90,120))+"'";
+  if(elapsed<=47) return Math.max(1,Math.min(elapsed,45))+"'";
+  return Math.max(46,Math.min(elapsed-17,90))+"'";
 };
 
 /* ── Per-match countdown formatter ── */

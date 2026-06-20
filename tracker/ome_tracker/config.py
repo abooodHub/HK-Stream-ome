@@ -22,9 +22,10 @@ PLAYER_AUTH_FILE  = os.path.join(DATA_DIR, "player_auth.json")
 STREAM_KEY_FILE   = os.path.join(DATA_DIR, "stream_key.json")
 SESSIONS_FILE     = os.path.join(DATA_DIR, "stream_sessions.json")
 GEOBLOCK_FILE     = os.path.join(DATA_DIR, "geo_block.json")
-STREAM_TITLE_FILE = os.path.join(DATA_DIR, "stream_title.json")
-NEXT_MATCH_FILE   = os.path.join(DATA_DIR, "next_match.json")
-SITE_SETTINGS_FILE = os.path.join(DATA_DIR, "site_settings.json")
+STREAM_TITLE_FILE    = os.path.join(DATA_DIR, "stream_title.json")
+NEXT_MATCH_FILE      = os.path.join(DATA_DIR, "next_match.json")
+SITE_SETTINGS_FILE   = os.path.join(DATA_DIR, "site_settings.json")
+FOOTBALL_API_KEY_FILE = os.path.join(DATA_DIR, "football_api_key.json")
 GEOIP_CACHE_FILE  = os.path.join(DATA_DIR, "geoip_cache.json")
 
 # --- أسرار من البيئة (لا تُكتب في الكود) ---

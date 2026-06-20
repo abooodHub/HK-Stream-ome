@@ -426,6 +426,23 @@
 
       <!-- Stream data reset / cleanup -->
       <div class="card">
+        <div class="card-head"><div class="card-title">⚽ مفتاح API جدول المباريات</div></div>
+        <div class="card-body">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">مفتاح football-data.org</div>
+              <div class="setting-desc">يُستخدم لجلب جداول المباريات — احصل على مفتاحك من <span style="color:var(--cyan)">football-data.org</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+            <input id="football-api-key-input" type="password" placeholder="أدخل المفتاح (32 حرف)" style="flex:1;font-family:monospace;letter-spacing:.05em">
+            <button class="btn" onclick="saveFootballApiKey()">حفظ</button>
+          </div>
+          <div id="football-api-key-status" style="font-size:.75rem;color:var(--text3);margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-head"><div class="card-title">⚠️ إدارة وتطهير بيانات البث</div></div>
         <div class="card-body">
           <div class="setting-row">
@@ -482,6 +499,42 @@ function _del(url, cb) {
     .then(function(r){ return r.json(); }).then(cb)
     .catch(function(){ showToast('خطأ في الاتصال'); });
 }
+
+/* ── Football API Key ── */
+function saveFootballApiKey() {
+  var key = document.getElementById('football-api-key-input').value.trim();
+  var st  = document.getElementById('football-api-key-status');
+  if (!key) { st.textContent = 'أدخل المفتاح أولاً'; st.style.color='var(--danger)'; return; }
+  st.textContent = 'جارٍ الحفظ…'; st.style.color='var(--text3)';
+  _post('/tracker-api/football-api-key', { key: key }, function(r) {
+    if (r.ok) {
+      document.getElementById('football-api-key-input').value = '';
+      st.textContent = '✓ تم الحفظ بنجاح — سيُستخدم المفتاح الجديد فوراً';
+      st.style.color = 'var(--green)';
+    } else {
+      st.textContent = 'فشل الحفظ';
+      st.style.color = 'var(--danger)';
+    }
+  });
+}
+function loadFootballApiKeyStatus() {
+  fetch('/tracker-api/football-api-key', { headers: _h() })
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      var st = document.getElementById('football-api-key-status');
+      if (!st) return;
+      if (d.set) {
+        st.textContent = 'المفتاح الحالي: ' + d.masked;
+        st.style.color = 'var(--green)';
+      } else {
+        st.textContent = 'لا يوجد مفتاح محفوظ — يُقرأ من متغير البيئة إن وُجد';
+        st.style.color = 'var(--text3)';
+      }
+    }).catch(function(){});
+}
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(loadFootballApiKeyStatus, 800);
+});
 
 function mTab(tab) {
   var topBtn = document.querySelector('.nav-item[onclick*="' + tab + '"]');

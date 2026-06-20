@@ -2,7 +2,7 @@
 import json, threading, time
 from datetime import datetime, timezone
 
-from . import config
+from . import config, store
 
 matches_cache      = []
 matches_cache_time = 0.0
@@ -23,7 +23,8 @@ def fetch_matches():
         d_to   = (today + _td(days=3)).strftime("%Y-%m-%d")
         url = (f"https://api.football-data.org/v4/matches"
                f"?competitions={config.FOOTBALL_COMPS}&dateFrom={d_from}&dateTo={d_to}")
-        req = _ur.Request(url, headers={"X-Auth-Token": config.FOOTBALL_API_KEY})
+        api_key = getattr(store, 'football_api_key', None) or config.FOOTBALL_API_KEY
+        req = _ur.Request(url, headers={"X-Auth-Token": api_key})
         with _ur.urlopen(req, timeout=7) as res:
             data = json.loads(res.read().decode("utf-8"))
         matches = []

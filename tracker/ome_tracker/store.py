@@ -90,6 +90,15 @@ def load_site_settings():
         site_settings = dict(config.SITE_DEFAULTS)
 
 
+def load_football_api_key():
+    global football_api_key
+    try:
+        with open(config.FOOTBALL_API_KEY_FILE) as f:
+            football_api_key = json.load(f).get("key", "") or config.FOOTBALL_API_KEY
+    except Exception:
+        football_api_key = config.FOOTBALL_API_KEY
+
+
 # --- الحالة المُحمّلة ---
 bans  = load(config.BAN_FILE,  {})
 kicks = load(config.KICK_FILE, {})
@@ -99,8 +108,10 @@ geo_block_cfg    = load_geoblock()
 stream_title_cfg = load_stream_title()
 next_match_ts    = None
 site_settings    = dict(config.SITE_DEFAULTS)
+football_api_key = config.FOOTBALL_API_KEY
 load_next_match()
 load_site_settings()
+load_football_api_key()
 
 
 def save_all():
