@@ -900,8 +900,8 @@ function startCountdown(ts) {
     var diff = ts - now;
     var bar = document.getElementById('countdown-bar');
     var isOnline = stream_meta && stream_meta.online;
-    if (diff <= 0 || isOnline) { stopCountdown(); return; }
-    if (bar) bar.classList.remove('hidden');
+    if (!bar || diff <= 0 || isOnline) { stopCountdown(); return; }
+    bar.classList.remove('hidden');
     var d = Math.floor(diff / 86400);
     var h = Math.floor((diff % 86400) / 3600);
     var m = Math.floor((diff % 3600) / 60);
