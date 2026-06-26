@@ -3,9 +3,12 @@ var proto = window.location.protocol;
 var wsProto = (proto === 'https:') ? 'wss:' : 'ws:';
 var WEBRTC_URL = wsProto + '//' + host + '/ome-ws/app/stream';
 var HLS_URL = proto + '//' + host + '/ome-hls/app/stream/master.m3u8';
-var RETRY_MS = 5000;
+var RETRY_MS = 3000;
+var STALL_MS  = 9000; // reconnect if video freezes for 9s without pause
 
 var omePlayer, retryTimer;
+var _stallWatchdog  = null;
+var _lastTimeUpdate = 0;
 var curLevel = -1;
 var isMuted = false;
 var _autoplayBlocked = false;
@@ -66,7 +69,25 @@ window.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+function _startStallWatchdog() {
+  clearInterval(_stallWatchdog);
+  _lastTimeUpdate = Date.now();
+  _stallWatchdog = setInterval(function() {
+    if (!vid || vid.paused || _autoplayBlocked) { _lastTimeUpdate = Date.now(); return; }
+    if (Date.now() - _lastTimeUpdate > STALL_MS) {
+      _stopStallWatchdog();
+      initPlayer();
+    }
+  }, 2000);
+}
+
+function _stopStallWatchdog() {
+  clearInterval(_stallWatchdog);
+  _stallWatchdog = null;
+}
+
 function initPlayer() {
+  _stopStallWatchdog();
   if (omePlayer) {
     try { omePlayer.remove(); } catch(e) {}
     omePlayer = null;
@@ -181,10 +202,12 @@ function initVideoEvents(targetVid) {
     bufferEl.classList.remove('show');
     setOnline(true);
     updatePlayIcons();
+    _startStallWatchdog();
   });
-  targetVid.addEventListener('pause', updatePlayIcons);
+  targetVid.addEventListener('pause', function() { _stopStallWatchdog(); updatePlayIcons(); });
   targetVid.addEventListener('ended', updatePlayIcons);
   targetVid.addEventListener('timeupdate', function() {
+    _lastTimeUpdate = Date.now();
     updateProgress();
     if (!targetVid.paused) {
       clearTimeout(bufferTimeout);

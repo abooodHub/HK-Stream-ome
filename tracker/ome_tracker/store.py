@@ -119,6 +119,27 @@ def save_all():
     save(config.KICK_FILE, kicks)
 
 
+# --- سجلّ تدقيق أفعال المدير (ring buffer) ---
+audit_log = load(config.AUDIT_FILE, [])
+if not isinstance(audit_log, list):
+    audit_log = []
+AUDIT_MAX = 200
+
+
+def log_audit(action, detail="", ip=""):
+    """يسجّل فعلاً إدارياً. لا يُستدعى وقفل `lock` ممسوك (يمسكه داخلياً)."""
+    with lock:
+        audit_log.insert(0, {
+            "ts":           time.time(),
+            "ts_formatted": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "action":       action,
+            "detail":       str(detail)[:200],
+            "ip":           ip,
+        })
+        del audit_log[AUDIT_MAX:]
+        save(config.AUDIT_FILE, audit_log)
+
+
 # --- تتبّع المشاهدين ---
 viewers = {}
 

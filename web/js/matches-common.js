@@ -161,7 +161,13 @@ window.TEAMS_AR = {
   /* Oceania */
   t['New Zealand']='نيوزيلندا';t['Fiji']='فيجي';
 })();
-window.teamAr = function(n){ return window.TEAMS_AR[n] || n; };
+/* تهريب دفاعي لبيانات API قبل حقنها في DOM (المصدر موثوق لكن دفاع متعمّق) */
+window.escMatch = function(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+};
+window.teamAr = function(n){ return window.TEAMS_AR[n] || window.escMatch(n); };
 
 window.saudiTime = function(utc){
   var d = new Date(new Date(utc).getTime()+3*3600000);
@@ -182,14 +188,14 @@ window.renderMatch = function(m){
   else if(done) badge='<span class="m-badge done">انتهت</span>';
   else if(post) badge='<span class="m-badge post">'+(s==='POSTPONED'?'مؤجلة':'ملغاة')+'</span>';
   else          badge='<span class="m-time"><span class="m-day-lbl">'+saudiDayName(m.utcDate)+'</span>'+saudiTime(m.utcDate)+'</span>';
-  var score=(live||done)&&hasScore?'<div class="m-score">'+sc.home+' — '+sc.away+'</div>':'';
+  var score=(live||done)&&hasScore?'<div class="m-score">'+escMatch(sc.home)+' — '+escMatch(sc.away)+'</div>':'';
   var cntdn='';
   if(!live&&!done&&!post){
     var diff=new Date(m.utcDate).getTime()-Date.now();
-    if(diff>0) cntdn='<div class="m-countdown" data-cntdn="'+m.utcDate+'">…</div>';
+    if(diff>0) cntdn='<div class="m-countdown" data-cntdn="'+escMatch(m.utcDate)+'">…</div>';
   }
-  var hCrest=m.homeTeam.crest?'<img class="m-crest" src="'+m.homeTeam.crest+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
-  var aCrest=m.awayTeam.crest?'<img class="m-crest" src="'+m.awayTeam.crest+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
+  var hCrest=m.homeTeam.crest?'<img class="m-crest" src="'+escMatch(m.homeTeam.crest)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
+  var aCrest=m.awayTeam.crest?'<img class="m-crest" src="'+escMatch(m.awayTeam.crest)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
   return '<div class="m-row'+(live?' m-live':'')+(done?' m-done':'')+'">'+
     '<div class="m-team m-home"><span class="m-tname">'+teamAr(m.homeTeam.shortName)+'</span>'+hCrest+'</div>'+
     '<div class="m-middle">'+badge+score+cntdn+'</div>'+
@@ -209,8 +215,8 @@ window.renderGroups = function(matches, listId, showDay){
   var html='';
   Object.keys(groups).forEach(function(code){
     var g=groups[code];
-    var arName=COMP_AR[code]||g.comp.name;
-    var emblem=g.comp.emblem?'<img class="comp-emblem" src="'+g.comp.emblem+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
+    var arName=COMP_AR[code]||escMatch(g.comp.name);
+    var emblem=g.comp.emblem?'<img class="comp-emblem" src="'+escMatch(g.comp.emblem)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'';
     html+='<div class="comp-block"><div class="comp-header">'+emblem+'<span>'+arName+'</span></div>';
     g.items.forEach(function(m){html+=renderMatch(m);});
     html+='</div>';

@@ -52,9 +52,11 @@ sed -e "s/__OME_API_TOKEN__/$OME_API_TOKEN/" \
     -e "s/__DISTRIBUTION__/$DOMAIN/" \
     "$REPO_DIR/config/ome/Server.xml" > "$OME_CONF_DIR/Server.xml"
 docker rm -f ovenmediaengine >/dev/null 2>&1 || true
+# شبكة المضيف (host) بدل نشر المنافذ (bridge): تُلغي docker-proxy وNAT،
+# فتمرّ حزم البث (خصوصاً 100 منفذ UDP لـ WebRTC) مباشرة لشبكة المضيف.
+# يخفّض استهلاك dockerd بشكل كبير. المنافذ نفسها تُفتح على المضيف مباشرة.
 docker run -d --name ovenmediaengine --restart always \
-  -p 1935:1935 -p 3333:3333 -p 8080:8080 -p 8081:8081 \
-  -p 3478:3478 -p 10000-10099:10000-10099/udp \
+  --network host \
   -v "$OME_CONF_DIR:/opt/ovenmediaengine/bin/origin_conf" \
   airensoft/ovenmediaengine:latest -c origin_conf >/dev/null
 

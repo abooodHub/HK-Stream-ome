@@ -351,6 +351,7 @@ function updateUI(d) {
     renderBreakdown('browsers-breakdown',  (d.stats || {}).browsers,  null);
     renderBreakdown('qualities-breakdown', (d.stats || {}).qualities, null);
     renderBreakdown('countries-breakdown', (d.stats || {}).countries, null);
+    if (window.updateGeoMap) window.updateGeoMap((d.stats || {}).countries || {});
 
     // Viewers table
     var viewersList = d.viewer_clients || [];
@@ -470,6 +471,8 @@ function updateUI(d) {
     if (!sessionsCb) {
         _renderSessionsTable(d.sessions_summary || []);
     }
+
+    _checkHealthAlerts(d);
 }
 
 // ===== BITRATE CHART (dual line: recv=cyan, send=amber) =====
@@ -1010,3 +1013,48 @@ window.addEventListener('resize', function() {
       drawBitrateChart(chartHistory, sendHistory);
     }
 });
+
+// ===== HEALTH ALERTS =====
+var _bitrateZeroSince = null;
+var _alertDismissedUntil = 0;
+
+function dismissHealthAlert() {
+    _alertDismissedUntil = Date.now() + 5 * 60 * 1000;
+    var b = document.getElementById('health-alert-banner');
+    if (b) b.classList.add('hidden');
+}
+
+function _checkHealthAlerts(d) {
+    var sh  = d.server_health || {};
+    var cpu = sh.cpu || 0;
+    var ram = (sh.ram  || {}).percent || 0;
+    var kbps     = ((d.stream || {}).kbps || {}).recv_30s || 0;
+    var isOnline = (d.health || {}).status === 'online';
+
+    // track zero-bitrate duration while online
+    if (isOnline && kbps === 0) {
+        if (!_bitrateZeroSince) _bitrateZeroSince = Date.now();
+    } else {
+        _bitrateZeroSince = null;
+    }
+
+    var problems = [];
+    if (cpu >= 85) problems.push('المعالج ' + cpu + '% — تحميل بالغ');
+    if (ram >= 90) problems.push('الذاكرة ' + ram + '% — قريبة من الامتلاء');
+    if (_bitrateZeroSince && (Date.now() - _bitrateZeroSince) > 30000) {
+        problems.push('معدل الإرسال صفر منذ ' + Math.round((Date.now() - _bitrateZeroSince) / 1000) + 'ث');
+    }
+
+    var banner = document.getElementById('health-alert-banner');
+    var msgEl  = document.getElementById('health-alert-msg');
+    if (!banner || !msgEl) return;
+
+    if (!problems.length) {
+        banner.classList.add('hidden');
+        _alertDismissedUntil = 0;
+        return;
+    }
+    if (Date.now() < _alertDismissedUntil) return;
+    msgEl.textContent = '⚠ ' + problems.join(' | ');
+    banner.classList.remove('hidden');
+}

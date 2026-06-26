@@ -19,8 +19,8 @@ def fetch_matches():
         import urllib.request as _ur
         from datetime import timedelta as _td
         today = datetime.now(timezone.utc)
-        d_from = today.strftime("%Y-%m-%d")
-        d_to   = (today + _td(days=3)).strftime("%Y-%m-%d")
+        d_from = (today - _td(days=1)).strftime("%Y-%m-%d")
+        d_to   = (today + _td(days=5)).strftime("%Y-%m-%d")
         url = (f"https://api.football-data.org/v4/matches"
                f"?competitions={config.FOOTBALL_COMPS}&dateFrom={d_from}&dateTo={d_to}")
         api_key = getattr(store, 'football_api_key', None) or config.FOOTBALL_API_KEY

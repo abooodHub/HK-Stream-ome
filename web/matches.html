@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="/css/common.css?v=1">
-  <link rel="stylesheet" href="/css/player.css?v=6">
+  <link rel="stylesheet" href="/css/player.css?v=7">
   <style>
   /* ═══ PAGE BASE ═══ */
   body{min-height:100vh;background:var(--bg)}
@@ -255,6 +255,71 @@
   }
 
   body{padding-bottom:env(safe-area-inset-bottom,0px)}
+
+  /* ── بطاقة مباشر الآن ── */
+  .live-hero-card{
+    display:block;text-decoration:none;
+    background:linear-gradient(135deg,rgba(220,40,40,.14) 0%,rgba(14,14,26,.85) 60%);
+    border:1px solid rgba(220,40,40,.3);
+    border-radius:var(--radius);
+    padding:18px 20px 14px;
+    margin-bottom:16px;
+    position:relative;overflow:hidden;
+    cursor:pointer;
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .live-hero-card:hover{
+    border-color:rgba(220,40,40,.55);
+    box-shadow:0 0 32px rgba(220,40,40,.15);
+  }
+  .live-hero-card::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(220,40,40,.08),transparent 70%);
+    pointer-events:none;
+  }
+  .hero-top{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .hero-live-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(220,40,40,.18);color:#ff5252;
+    border:1px solid rgba(220,40,40,.35);
+    border-radius:20px;padding:3px 12px;
+    font-size:.72rem;font-weight:800;
+    animation:pulse-badge-red 1.2s ease-in-out infinite;
+  }
+  .hero-comp{font-size:.75rem;color:var(--text3);font-weight:600}
+  .hero-teams{
+    display:flex;align-items:center;justify-content:center;
+    gap:16px;margin-bottom:14px;
+  }
+  .hero-team{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:80px}
+  .hero-crest{width:54px;height:54px;object-fit:contain}
+  .hero-name{
+    font-size:.88rem;font-weight:800;
+    color:var(--text);text-align:center;line-height:1.3;
+  }
+  .hero-mid{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px}
+  .hero-score{
+    font-size:1.6rem;font-weight:900;
+    color:#fff;font-family:var(--font-en);
+    letter-spacing:2px;
+  }
+  .hero-minute{
+    font-size:.72rem;font-weight:800;color:#ff7070;
+    animation:pulse-badge-red 1.8s ease-in-out infinite;
+  }
+  .hero-cta{
+    text-align:center;font-size:.76rem;font-weight:700;
+    color:rgba(255,82,82,.75);
+  }
+  @media(max-width:480px){
+    .hero-crest{width:42px;height:42px}
+    .hero-score{font-size:1.3rem}
+    .hero-name{font-size:.8rem}
+    .hero-teams{gap:10px}
+  }
   </style>
 </head>
 <body>
@@ -294,7 +359,7 @@
   H&amp;K Stream &mdash; <a href="/">العودة للبث المباشر</a>
 </footer>
 
-<script src="/js/matches-common.js?v=5"></script>
+<script src="/js/matches-common.js?v=6"></script>
 <script>
 
 var _allMatches = [];
@@ -369,8 +434,8 @@ function renderMatchFull(m) {
     if (diff > 0) cntdn = '<div class="m-countdown" data-cntdn="'+m.utcDate+'">…</div>';
   }
 
-  var hCrest = m.homeTeam.crest ? '<img class="m-crest" src="'+m.homeTeam.crest+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  var aCrest = m.awayTeam.crest ? '<img class="m-crest" src="'+m.awayTeam.crest+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  var hCrest = m.homeTeam.crest ? '<img class="m-crest" src="'+escMatch(m.homeTeam.crest)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  var aCrest = m.awayTeam.crest ? '<img class="m-crest" src="'+escMatch(m.awayTeam.crest)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '';
 
   var rowCls = 'm-row' + (live?' m-live':'') + (done?' m-done':'') + (soon?' m-soon':'');
 
@@ -379,6 +444,35 @@ function renderMatchFull(m) {
     '<div class="m-middle">'+badge+score+htScore+cntdn+'</div>' +
     '<div class="m-team m-away">'+aCrest+'<span class="m-tname">'+teamAr(m.awayTeam.shortName)+'</span></div>' +
     '</div>';
+}
+
+/* ═══ LIVE HERO CARD ═══ */
+function renderLiveHeroCard(m) {
+  var sc = m.score, hasScore = sc.home !== null && sc.away !== null;
+  var min = getMatchMinute(m);
+  var arComp = COMP_AR[m.competition.code] || escMatch(m.competition.name);
+  var hCrest = m.homeTeam.crest
+    ? '<img class="hero-crest" src="'+escMatch(m.homeTeam.crest)+'" alt="" loading="lazy" onerror="this.style.opacity=\'0\'">'
+    : '<div class="hero-crest" style="opacity:0"></div>';
+  var aCrest = m.awayTeam.crest
+    ? '<img class="hero-crest" src="'+escMatch(m.awayTeam.crest)+'" alt="" loading="lazy" onerror="this.style.opacity=\'0\'">'
+    : '<div class="hero-crest" style="opacity:0"></div>';
+  var scoreHtml = hasScore
+    ? '<div class="hero-score">'+sc.home+' — '+sc.away+'</div>'
+    : '<div class="hero-score" style="font-size:1rem;opacity:.5">VS</div>';
+  var minuteHtml = min ? '<div class="hero-minute">'+min+'</div>' : '';
+  return '<a href="/" class="live-hero-card">' +
+    '<div class="hero-top">' +
+      '<span class="hero-live-badge"><span class="live-dot-tab"></span> مباشر على H&K</span>' +
+      '<span class="hero-comp">'+arComp+'</span>' +
+    '</div>' +
+    '<div class="hero-teams">' +
+      '<div class="hero-team">'+hCrest+'<span class="hero-name">'+teamAr(m.homeTeam.shortName)+'</span></div>' +
+      '<div class="hero-mid">'+scoreHtml+minuteHtml+'</div>' +
+      '<div class="hero-team">'+aCrest+'<span class="hero-name">'+teamAr(m.awayTeam.shortName)+'</span></div>' +
+    '</div>' +
+    '<div class="hero-cta">▶ اضغط لمشاهدة البث المباشر</div>' +
+  '</a>';
 }
 
 /* ═══ RENDER GROUPS WITH SEPARATORS ═══ */
@@ -400,7 +494,10 @@ function renderActive() {
 
   var sepSvg = '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>';
 
-  var html = '';
+  /* بطاقة مباشر الآن في أعلى القائمة */
+  var liveMatches = filtered.filter(function(m){ return STATUS_LIVE[m.status]; });
+  var html = liveMatches.length ? renderLiveHeroCard(liveMatches[0]) : '';
+
   order.forEach(function(code, idx) {
     var g = groups[code];
     var arName = COMP_AR[code] || g.comp.name;
@@ -434,7 +531,7 @@ function refresh() {
   fetch('/tracker-api/matches')
     .then(function(r){ return r.json(); })
     .then(function(d) {
-      _allMatches = (d.matches || []).filter(function(m){ return m.status !== 'FINISHED'; });
+      _allMatches = d.matches || [];
       buildTabs(_allMatches);
       renderActive();
       if (btn) btn.classList.remove('spinning');

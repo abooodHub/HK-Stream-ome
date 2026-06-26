@@ -27,6 +27,7 @@ NEXT_MATCH_FILE      = os.path.join(DATA_DIR, "next_match.json")
 SITE_SETTINGS_FILE   = os.path.join(DATA_DIR, "site_settings.json")
 FOOTBALL_API_KEY_FILE = os.path.join(DATA_DIR, "football_api_key.json")
 GEOIP_CACHE_FILE  = os.path.join(DATA_DIR, "geoip_cache.json")
+AUDIT_FILE        = os.path.join(DATA_DIR, "audit_log.json")
 
 # --- أسرار من البيئة (لا تُكتب في الكود) ---
 FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY", "")

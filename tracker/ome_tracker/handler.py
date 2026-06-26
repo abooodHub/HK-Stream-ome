@@ -67,6 +67,10 @@ class Handler(BaseHTTPRequestHandler):
             if forwarded: return forwarded
         return self.client_address[0]
 
+    def _audit(self, action, detail=""):
+        try: store.log_audit(action, detail, self._ip())
+        except Exception: pass
+
     def _fmt_time(self, secs):
         secs = int(secs)
         if secs < 60:   return f"{secs} ث"
@@ -84,6 +88,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body()
             if auth.check_pw(body.get("username", ""), body.get("password", "")):
                 tok, exp = auth.make_token()
+                self._audit("login", "دخول ناجح للوحة")
                 self._json(200, {"token": tok, "expires": exp})
             else:
                 config.sec_log.warning(f"[tracker-auth] Failed login attempt from {client_ip}")
@@ -103,6 +108,7 @@ class Handler(BaseHTTPRequestHandler):
             auth.auth_cfg["hash_alg"] = alg
             with open(config.AUTH_FILE, "w") as f:
                 json.dump(auth.auth_cfg, f, indent=2)
+            self._audit("change_password", "تغيير كلمة مرور اللوحة")
             self._json(200, {"ok": True})
 
         elif p == "/api/player-auth/config":
@@ -116,6 +122,7 @@ class Handler(BaseHTTPRequestHandler):
             with open(config.PLAYER_AUTH_FILE, "w") as f:
                 json.dump(auth.player_auth_cfg, f, indent=2)
             auth.player_auth_version += 1  # إشعار المشاهدين المتصلين بالتغيير فوراً
+            self._audit("player_auth", ("تفعيل" if auth.player_auth_cfg["enabled"] else "تعطيل") + " حماية المشاهدة")
             self._json(200, {"ok": True})
 
         elif p == "/api/stream-key/config":
@@ -127,6 +134,7 @@ class Handler(BaseHTTPRequestHandler):
                 store.stream_key_cfg["key"] = new_key
             with open(config.STREAM_KEY_FILE, "w") as f:
                 json.dump(store.stream_key_cfg, f, indent=2)
+            self._audit("stream_key", ("تفعيل" if store.stream_key_cfg["enabled"] else "تعطيل") + " مفتاح البث")
             self._json(200, {"ok": True})
 
         elif p == "/api/ome/webhook":
@@ -234,6 +242,7 @@ class Handler(BaseHTTPRequestHandler):
             if not self._bearer(): return self._json(401, {"error": "unauthorized"})
             ip = self._body().get("ip", "")
             store.do_kick(ip, store.viewers.get(ip, {}).get("device", "unknown"))
+            self._audit("kick", f"طرد {ip}")
             self._json(200, {"ok": True})
 
         elif p == "/api/ban":
@@ -241,6 +250,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self._body()
             ip   = body.get("ip", "")
             store.do_ban(ip, store.viewers.get(ip, {}).get("device", "unknown"), body.get("reason", "admin"))
+            self._audit("ban", f"حظر {ip}")
             self._json(200, {"ok": True})
 
         elif p == "/api/kicks/clear":
@@ -251,6 +261,7 @@ class Handler(BaseHTTPRequestHandler):
                 store.save_all()
             for ip in ips_to_unkick:
                 store.iptables("-D", ip)
+            self._audit("kicks_clear", "مسح كل عمليات الطرد")
             self._json(200, {"ok": True})
 
         elif p == "/api/logs/clear":
@@ -263,6 +274,7 @@ class Handler(BaseHTTPRequestHandler):
                 store.save_all()
             for ip in ips_to_unkick:
                 store.iptables("-D", ip)
+            self._audit("logs_clear", "مسح السجلّات والإجماليات")
             self._json(200, {"ok": True})
 
         elif p == "/api/bans/clear":
@@ -273,6 +285,7 @@ class Handler(BaseHTTPRequestHandler):
                 store.save_all()
             for ip in ips_to_unban:
                 store.iptables("-D", ip)
+            self._audit("bans_clear", "مسح كل عمليات الحظر")
             self._json(200, {"ok": True})
 
         elif p == "/api/stream/title":
@@ -287,6 +300,7 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/api/stream/gate":
             if not self._bearer(): return self._json(401, {"error": "unauthorized"})
             store.stream_gated = bool(self._body().get("gated", False))
+            self._audit("stream_gate", "إخفاء البث عن المشاهدين" if store.stream_gated else "إظهار البث")
             self._json(200, {"ok": True, "gated": store.stream_gated})
 
         elif p == "/api/geo-block/config":
@@ -298,6 +312,7 @@ class Handler(BaseHTTPRequestHandler):
                 store.geo_block_cfg["blocked_countries"] = [c.upper() for c in countries if len(c) == 2]
             with open(config.GEOBLOCK_FILE, "w") as f:
                 json.dump(store.geo_block_cfg, f, indent=2, ensure_ascii=False)
+            self._audit("geo_block", ("تفعيل" if store.geo_block_cfg["enabled"] else "تعطيل") + " حظر الدول: " + ",".join(store.geo_block_cfg.get("blocked_countries", [])))
             self._json(200, {"ok": True})
 
         elif p == "/api/next-match":
@@ -340,9 +355,17 @@ class Handler(BaseHTTPRequestHandler):
         if not self._bearer(): return self._json(401, {"error": "unauthorized"})
         if p.startswith("/api/ban/"):
             store.do_unban(p[9:])
+            self._audit("unban", f"رفع حظر {p[9:]}")
             self._json(200, {"ok": True})
         elif p.startswith("/api/kicked/"):
             store.do_unkick(p[12:])
+            self._audit("unkick", f"رفع طرد {p[12:]}")
+            self._json(200, {"ok": True})
+        elif p == "/api/audit":
+            with store.lock:
+                store.audit_log.clear()
+                store.save(config.AUDIT_FILE, store.audit_log)
+            self._audit("audit_clear", "مسح سجلّ التدقيق")
             self._json(200, {"ok": True})
         elif p == "/api/sessions":
             store.sessions_log.clear()
@@ -382,6 +405,10 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/api/dashboard":
             if not self._bearer(): return self._json(401, {"error": "unauthorized"})
             self._json(200, self._build_dashboard())
+
+        elif p == "/api/audit":
+            if not self._bearer(): return self._json(401, {"error": "unauthorized"})
+            self._json(200, {"entries": store.audit_log[:100]})
 
         elif p == "/api/stream-key/status":
             if not self._bearer(): return self._json(401, {"error": "unauthorized"})
@@ -519,10 +546,14 @@ class Handler(BaseHTTPRequestHandler):
         uptime = stat.get("time_ms", 0) // 1000 if stat.get("online") else 0
 
         if store.bw_history:
-            vals      = [x["kbps"] for x in store.bw_history[-12:]]
-            avg       = sum(vals) / len(vals) if vals else 0
-            diffs     = [abs(vals[i]-vals[i-1]) for i in range(1, len(vals))]
-            stability = max(0, 100 - int((sum(diffs) / max(avg, 1)) * 100)) if diffs else 100
+            vals  = [x["kbps"] for x in store.bw_history[-24:] if x["kbps"] > 0]
+            avg   = sum(vals) / len(vals) if vals else 0
+            diffs = [abs(vals[i] - vals[i-1]) for i in range(1, len(vals))]
+            if diffs and avg > 0:
+                avg_diff  = sum(diffs) / len(diffs)
+                stability = max(0, 100 - int((avg_diff / avg) * 100))
+            else:
+                stability = 100
         else:
             avg, stability = 0, 100
 

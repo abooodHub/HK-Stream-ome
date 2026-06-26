@@ -8,13 +8,41 @@
   <meta name="theme-color" content="#07070f"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
   <link rel="manifest" href="/manifest.json"/>
   <title>H&amp;K — بث مباشر</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/ovenplayer@latest/dist/ovenplayer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ovenplayer@0.10.52/dist/ovenplayer.js"></script>
   <link rel="stylesheet" href="/css/common.css?v=1">
-  <link rel="stylesheet" href="/css/player.css?v=6">
+  <link rel="stylesheet" href="/css/player.css?v=7">
+  <style>
+  /* ── بطاقة المباراة القادمة في شاشة الانتظار ── */
+  .offline-next-match{
+    background:rgba(201,162,39,.09);
+    border:1px solid rgba(201,162,39,.22);
+    border-radius:14px;
+    padding:14px 20px;
+    margin:14px auto 4px;
+    max-width:320px;
+    text-align:center;
+    animation:fadeUp .5s var(--ease);
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .onm-label{
+    font-size:.7rem;font-weight:800;color:var(--gold);
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;
+  }
+  .onm-comp{font-size:.7rem;color:var(--text3);margin-bottom:10px}
+  .onm-teams{display:flex;align-items:center;justify-content:center;gap:14px}
+  .onm-team{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:70px}
+  .onm-crest{width:42px;height:42px;object-fit:contain}
+  .onm-team span{font-size:.8rem;font-weight:700;color:var(--text);line-height:1.3}
+  .onm-vs{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+  .onm-vs #onmTime{font-size:1rem;font-weight:800;color:var(--gold)}
+  .onm-cd{font-size:.68rem;color:var(--text3);font-weight:600}
+  </style>
 </head>
 <body class="player-compact">
 
@@ -131,6 +159,30 @@
         <div class="yt-offline-logo">H&amp;K</div>
         <div class="yt-offline-text" id="ytOfflineText" style="display:none"></div>
         <div class="yt-offline-waiting">في انتظار البث…</div>
+
+        <!-- بطاقة المباراة القادمة — تظهر فقط عند وجود مباراة قادمة -->
+        <div class="offline-next-match" id="offlineNextMatch" style="display:none">
+          <div class="onm-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+            المباراة القادمة
+          </div>
+          <div class="onm-comp" id="onmComp"></div>
+          <div class="onm-teams">
+            <div class="onm-team">
+              <img id="onmHomeCrest" class="onm-crest" alt="" onerror="this.style.opacity='0'">
+              <span id="onmHomeName"></span>
+            </div>
+            <div class="onm-vs">
+              <span id="onmTime"></span>
+              <span class="onm-cd" id="onmCd"></span>
+            </div>
+            <div class="onm-team">
+              <img id="onmAwayCrest" class="onm-crest" alt="" onerror="this.style.opacity='0'">
+              <span id="onmAwayName"></span>
+            </div>
+          </div>
+        </div>
+
         <div class="yt-spinner-wrap">
           <div class="yt-spinner-outer"></div>
           <div class="yt-spinner-inner"></div>
@@ -260,8 +312,8 @@
 <footer class="site-footer">H&amp;K Stream</footer>
 
 <!-- ═══════════ SCRIPT ═══════════ -->
-<script src="/js/player.js?v=7"></script>
-<script src="/js/matches-common.js?v=4"></script>
+<script src="/js/player.js?v=8"></script>
+<script src="/js/matches-common.js?v=6"></script>
 <script>
 
 /* ── HEADER: nearest live/upcoming match chip ── */
@@ -378,6 +430,34 @@ function _scheduleSmartRefresh(){
   _matchTimer = setTimeout(function(){ if(window.loadMatches) loadMatches(); }, iv);
 }
 
+/* ── Offline next-match card ── */
+var _offlineNextUtc = null;
+function _updateOfflineCard(allMatches) {
+  var now = Date.now();
+  var upcoming = (allMatches||[])
+    .filter(function(m){
+      return m.status!=='CANCELLED'&&m.status!=='POSTPONED'&&
+             !STATUS_DONE[m.status]&&!STATUS_LIVE[m.status]&&
+             new Date(m.utcDate).getTime()>now;
+    })
+    .sort(function(a,b){return new Date(a.utcDate)-new Date(b.utcDate);});
+  var card=document.getElementById('offlineNextMatch');
+  if(!card||!upcoming.length){if(card)card.style.display='none';_offlineNextUtc=null;return;}
+  var m=upcoming[0],h=m.homeTeam||{},a=m.awayTeam||{},comp=m.competition||{};
+  _offlineNextUtc=m.utcDate;
+  var hcEl=document.getElementById('onmHomeCrest'),acEl=document.getElementById('onmAwayCrest');
+  if(hcEl){hcEl.src=h.crest||'';hcEl.style.opacity=h.crest?'1':'0';}
+  if(acEl){acEl.src=a.crest||'';acEl.style.opacity=a.crest?'1':'0';}
+  var hnEl=document.getElementById('onmHomeName'),anEl=document.getElementById('onmAwayName');
+  if(hnEl)hnEl.textContent=teamAr(h.shortName||h.name||'');
+  if(anEl)anEl.textContent=teamAr(a.shortName||a.name||'');
+  var compEl=document.getElementById('onmComp');
+  if(compEl)compEl.textContent=(window.COMP_AR&&window.COMP_AR[comp.code])||comp.name||'';
+  var tEl=document.getElementById('onmTime');
+  if(tEl)tEl.textContent=saudiTime(m.utcDate);
+  card.style.display='';
+}
+
 /* ── INDEX: today only ── */
 (function(){
   window.loadMatches = function(){
@@ -394,6 +474,7 @@ function _scheduleSmartRefresh(){
         var badge=document.getElementById('allMatchesBadge');
         if(badge) badge.textContent=other.length>0?'+'+other.length:'';
         updateHeaderMatch(all);
+        _updateOfflineCard(all);
         if(btn) btn.classList.remove('spinning');
       })
       .catch(function(){
@@ -434,6 +515,28 @@ setInterval(function(){
     var minEl=document.getElementById('curMin');
     if(minEl && minEl.style.display!=='none' && mn) minEl.textContent=mn;
   }
+  /* تحديث عداد المباراة القادمة في شاشة الانتظار */
+  if(_offlineNextUtc){
+    var cdDiff=new Date(_offlineNextUtc).getTime()-now;
+    var cdEl=document.getElementById('onmCd');
+    if(cdEl) cdEl.textContent=cdDiff>0?_fmtDiff(cdDiff,_offlineNextUtc)||'':'';
+  }
+  /* تحديث شريط العداد العلوي */
+  var cdSrc=window._soonestUpcomingUtc||_offlineNextUtc;
+  if(cdSrc){
+    var cdBarDiff=new Date(cdSrc).getTime()-now;
+    var cdBar=document.getElementById('countdown-bar');
+    if(cdBar&&cdBarDiff>0&&!document.body.classList.contains('hide-cd-bar')){
+      cdBar.classList.remove('hidden');
+      var _cd=function(id,v){var e=document.getElementById(id);if(e)e.textContent=String(v).padStart(2,'0');};
+      _cd('cd-d',Math.floor(cdBarDiff/86400000));
+      _cd('cd-h',Math.floor((cdBarDiff%86400000)/3600000));
+      _cd('cd-m',Math.floor((cdBarDiff%3600000)/60000));
+      _cd('cd-s',Math.floor((cdBarDiff%60000)/1000));
+    } else if(cdBar&&cdBarDiff<=0){
+      cdBar.classList.add('hidden');
+    }
+  }
 },1000);
 
 /* ── SITE SETTINGS ── */
@@ -443,6 +546,13 @@ function applySiteSettings(s){
   document.body.classList.toggle('hide-cd-bar', s.show_countdown_bar===false);
 }
 fetch('/tracker-api/site-settings').then(function(r){return r.json();}).then(applySiteSettings).catch(function(){});
+
+/* ── PWA Service Worker ── */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
 </script>
 
 </body>
